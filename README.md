@@ -40,7 +40,7 @@ Hệ thống được thiết kế theo kiến trúc **Giám sát An ninh Thụ 
 Hệ thống bao gồm 5 tầng thành phần chính:
 
 ```
-[Máy chủ Web (Apache/DVWA)] 
+[Máy chủ Web (Apache/DVWA trên Ubuntu Server)] 
        │ (Access Logs / Log Tailer over SSH/SFTP)
        ▼
 [Tầng Tiền Xử Lý (Apache Parser & URL Decoder)]
@@ -110,11 +110,11 @@ Hệ thống bao gồm 5 tầng thành phần chính:
 ## ⚙️ Yêu Cầu Hệ Thống & Cài Đặt
 
 ### 1. Yêu cầu môi trường
-* **Hệ điều hành:** Windows 10/11, Linux (Ubuntu 22.04 LTS), macOS.
-* **Python:** Phân bản 3.10 trở lên.
-* **Trình duyệt:** Chrome, Firefox, Edge hỗ trợ ES6 & WebSocket/Fetch API.
+* **Máy giám sát (SOC Machine):** Windows 10/11, macOS hoặc Linux chạy Python 3.10 trở lên.
+* **Máy chủ mục tiêu (Target Web Server):** Ubuntu Server 22.04 LTS (hoặc 20.04/24.04 LTS).
+* **Trình duyệt Web:** Chrome, Firefox, Edge hỗ trợ ES6 & Fetch API.
 
-### 2. Cài đặt các thư viện phụ thuộc
+### 2. Cài đặt các thư viện phụ thuộc trên máy SOC
 Chạy lệnh sau tại thư mục gốc của dự án:
 
 ```bash
@@ -125,7 +125,76 @@ pip install -r requirements.txt
 
 ---
 
-## 🚀 Hướng Dẫn Sử Dụng
+## 🐧 Hướng Dẫn Cài Đặt DVWA Trên Ubuntu Server
+
+Để dựng môi trường thử nghiệm ứng dụng web chứa lỗ hổng DVWA trên **Ubuntu Server 22.04 LTS**, thực hiện theo các bước chi tiết dưới đây:
+
+### Bước 1: Cài đặt Web Server LAMP Stack (Apache, MySQL/MariaDB, PHP)
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install apache2 mariadb-server php php-mysqli php-gd libapache2-mod-php git -y
+```
+
+### Bước 2: Tải mã nguồn DVWA vào Apache Document Root
+```bash
+cd /var/www/html
+sudo git clone https://github.com/digininja/DVWA.git dvwa
+sudo chown -R www-data:www-data /var/www/html/dvwa
+sudo chmod -R 755 /var/www/html/dvwa
+```
+
+### Bước 3: Tạo Cơ Sở Dữ Liệu MySQL/MariaDB Cho DVWA
+```bash
+sudo mysql -u root -e "CREATE DATABASE dvwa;"
+sudo mysql -u root -e "CREATE USER 'dvwa_user'@'localhost' IDENTIFIED BY 'password';"
+sudo mysql -u root -e "GRANT ALL PRIVILEGES ON dvwa.* TO 'dvwa_user'@'localhost';"
+sudo mysql -u root -e "FLUSH PRIVILEGES;"
+```
+
+### Bước 4: Cấu Hình File `config.inc.php` Của DVWA
+```bash
+cd /var/www/html/dvwa/config
+sudo cp config.inc.php.dist config.inc.php
+sudo nano config.inc.php
+```
+Cập nhật thông tin kết nối CSDL và ReCAPTCHA key:
+```php
+$_DVWA[ 'db_database' ] = 'dvwa';
+$_DVWA[ 'db_user' ]     = 'dvwa_user';
+$_DVWA[ 'db_password' ] = 'password';
+$_DVWA[ 'db_port' ]     = '3306';
+
+$_DVWA[ 'recaptcha_public_key' ]  = '6LdJ9SATAAAAAH2_615wWhVyTjwZz1xFZP7FJBNq';
+$_DVWA[ 'recaptcha_private_key' ] = '6LdJ9SATAAAAAGko_1x2kP2D20v8w5vX1X0x8uXv';
+```
+
+### Bước 5: Cấu Hình PHP & Ghi Log Apache 
+Sửa file cấu hình PHP `/etc/php/8.1/apache2/php.ini`:
+```bash
+sudo nano /etc/php/8.1/apache2/php.ini
+```
+* Bật hai tham số:
+  ```ini
+  allow_url_include = On
+  allow_url_fopen = On
+  ```
+
+Đảm bảo Apache ghi nhận định dạng **Combined Log Format** tại `/var/log/apache2/access.log`:
+```bash
+sudo systemctl restart apache2 mariadb
+```
+
+### Bước 6: Khởi Tạo Database Trên Web Interface
+1. Truy cập trình duyệt: `http://<IP_Ubuntu_Server>/dvwa/setup.php`
+2. Nhấn nút **Create / Reset Database** ở cuối trang.
+3. Đăng nhập hệ thống với tài khoản mặc định:
+   * **Username:** `admin`
+   * **Password:** `password`
+4. Vào mục **DVWA Security** trên thanh menu trái, chuyển mức bảo mật sang **Low** và nhấn **Submit** để khởi tạo môi trường thực nghiệm các kỹ thuật tấn công SQL Injection.
+
+---
+
+## 🚀 Hướng Dẫn Sử Dụng Hệ Thống AI Security
 
 ### 1. Khởi chạy SOC Real-Time Monitoring Dashboard
 Để khởi động máy chủ giám sát SOC và màn hình điều khiển:
