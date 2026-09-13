@@ -1,0 +1,14 @@
+{
+  "dataset_samples": 13115,
+  "train_samples": 9259,
+  "validation_samples": 1990,
+  "test_samples": 1866,
+  "mean_cv_f1": 0.9995678386895344,
+  "baseline_lr_accuracy": 0.9967845659163987,
+  "baseline_nb_accuracy": 0.7802786709539121,
+  "accuracy": 0.9994640943193998,
+  "sqli_precision": 0.9991928974979822,
+  "sqli_recall": 1.0,
+  "sqli_f1": 0.9995962858296327,
+  "roc_auc": 1.0
+}

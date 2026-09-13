@@ -1,0 +1,48 @@
+====================================
+PAYLOAD GENERATION REPORT
+====================================
+Total Generated:     46973
+Total Unique:        13166
+Duplicates Removed: 33807
+
+Normal Count:        4204 (31.93%)
+SQLi Count:          8962 (68.07%)
+
+Dataset Splits (Family/Template Grouped Split - Zero Leakage):
+  - Train:           9889 samples (104 templates)
+  - Validation:      1865 samples (22 templates)
+  - Test (Unseen):   1412 samples (23 templates)
+
+SQLi Attack Type Distribution:
+  - sqli_boolean: 409
+  - sqli_blind_boolean: 409
+  - sqli_union: 409
+  - sqli_error: 409
+  - sqli_blind_error: 409
+  - sqli_blind_time: 409
+  - sqli_syntax_probe: 409
+  - sqli_auth: 409
+  - sqli_numeric: 409
+  - sqli_string: 409
+  - sqli_nested: 409
+  - sqli_subquery: 409
+  - sqli_enum: 409
+  - sqli_info_schema: 409
+  - sqli_obfuscated: 409
+  - sqli_comment_var: 409
+  - sqli_whitespace_var: 409
+  - sqli_case_var: 409
+  - sqli_param_var: 409
+  - sqli_mixed: 409
+  - sqli_json: 409
+  - sqli_encoded: 373
+
+Unique Templates:    149
+Unique Payload Hashes: 13166
+
+Payload Length Statistics:
+  - Min Length:    5
+  - Max Length:    604
+  - Mean Length:   59.09
+  - Median Length: 52.00
+====================================

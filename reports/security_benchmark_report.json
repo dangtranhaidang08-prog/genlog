@@ -1,0 +1,162 @@
+{
+  "adversarial_robustness_rate": 100.0,
+  "false_positive_rate": 25.0,
+  "latency_benchmark": {
+    "iterations": 50,
+    "avg_latency_ms": 44.194,
+    "throughput_rps": 22.6,
+    "breakdown": {
+      "feature_extraction_ms": 0.067,
+      "tfidf_transform_ms": 0.34,
+      "rf_predict_ms": 43.617
+    }
+  },
+  "evasion_details": [
+    {
+      "description": "Watermarking (Padding benign tokens)",
+      "request": "GET /search.php?id=1' UNION SELECT user,password FROM users-- &category=books&author=john&sort=asc HTTP/1.1",
+      "detected": true,
+      "sqli_prob": 0.8667
+    },
+    {
+      "description": "Watermarking (Benign query parameters)",
+      "request": "GET /products?id=1' OR 1=1-- &name=laptop&brand=dell&price=500 HTTP/1.1",
+      "detected": true,
+      "sqli_prob": 1.0
+    },
+    {
+      "description": "Inline Comment Whitespace Obfuscation",
+      "request": "GET /item?id=1'/**/OR/**/1=1# HTTP/1.1",
+      "detected": true,
+      "sqli_prob": 1.0
+    },
+    {
+      "description": "MySQL Version Comment Obfuscation",
+      "request": "GET /item?id=1'/*!50000UNION*//*!50000SELECT*/1,2# HTTP/1.1",
+      "detected": true,
+      "sqli_prob": 1.0
+    },
+    {
+      "description": "Hex-encoded SQLi probe",
+      "request": "GET /login?id=0x27204f5220313d31 HTTP/1.1",
+      "detected": true,
+      "sqli_prob": 0.8833
+    },
+    {
+      "description": "Mixed-case keyword evasion",
+      "request": "GET /api/user?id=1' uNiOn SeLeCt null,null-- HTTP/1.1",
+      "detected": true,
+      "sqli_prob": 1.0
+    },
+    {
+      "description": "URL-encoded Line-feed delimiter",
+      "request": "GET /view?id=1'%0AOR%0A1=1-- HTTP/1.1",
+      "detected": true,
+      "sqli_prob": 1.0
+    },
+    {
+      "description": "String Tautology with LIKE",
+      "request": "GET /check?id=1' OR 'admin' LIKE 'admin'-- HTTP/1.1",
+      "detected": true,
+      "sqli_prob": 0.9867
+    },
+    {
+      "description": "Inequality Tautology 2>1",
+      "request": "GET /check?id=1' OR 2>1-- HTTP/1.1",
+      "detected": true,
+      "sqli_prob": 1.0
+    },
+    {
+      "description": "Deeply Nested Parentheses Tautology",
+      "request": "GET /query?id=1' OR (((1=1)))-- HTTP/1.1",
+      "detected": true,
+      "sqli_prob": 1.0
+    },
+    {
+      "description": "JSON Body SQLi Auth Evasion",
+      "request": "POST /api/v1/auth HTTP/1.1",
+      "detected": true,
+      "sqli_prob": 1.0
+    },
+    {
+      "description": "Nested JSON Body UNION SELECT Evasion",
+      "request": "POST /api/v1/query HTTP/1.1",
+      "detected": true,
+      "sqli_prob": 1.0
+    }
+  ],
+  "false_positive_details": [
+    {
+      "description": "Irish Name with single quote (O'Connor)",
+      "request": "GET /profile?user=O'Connor&role=developer HTTP/1.1",
+      "false_positive": false,
+      "sqli_prob": 0.3667
+    },
+    {
+      "description": "Italian Name with single quote (D'Angelo)",
+      "request": "GET /author?name=D'Angelo HTTP/1.1",
+      "false_positive": true,
+      "sqli_prob": 0.84
+    },
+    {
+      "description": "Search query with word 'select'",
+      "request": "GET /search?q=How+to+select+best+laptop HTTP/1.1",
+      "false_positive": true,
+      "sqli_prob": 0.5333
+    },
+    {
+      "description": "Forum title with 'update' and 'version'",
+      "request": "GET /forum?title=Update+on+version+2.0 HTTP/1.1",
+      "false_positive": false,
+      "sqli_prob": 0.08
+    },
+    {
+      "description": "CSS documentation search with 'drop'",
+      "request": "GET /docs?topic=drop+shadow+in+css HTTP/1.1",
+      "false_positive": false,
+      "sqli_prob": 0.0933
+    },
+    {
+      "description": "Benign price/rating filters",
+      "request": "GET /filter?price_min=10&price_max=100&rating_gte=4 HTTP/1.1",
+      "false_positive": false,
+      "sqli_prob": 0.0367
+    },
+    {
+      "description": "Benign math query",
+      "request": "GET /math?calc=10+plus+20+equals+30 HTTP/1.1",
+      "false_positive": false,
+      "sqli_prob": 0.07
+    },
+    {
+      "description": "Standard homepage with page and lang",
+      "request": "GET /index.php?page=home&lang=vi HTTP/1.1",
+      "false_positive": false,
+      "sqli_prob": 0.0
+    },
+    {
+      "description": "REST API pagination",
+      "request": "GET /api/v1/items?limit=20&offset=40 HTTP/1.1",
+      "false_positive": false,
+      "sqli_prob": 0.0033
+    },
+    {
+      "description": "Catalog category sort",
+      "request": "GET /catalog?category=electronics&sort=newest HTTP/1.1",
+      "false_positive": false,
+      "sqli_prob": 0.0
+    },
+    {
+      "description": "JSON Benign Search with pagination",
+      "request": "POST /api/v1/search HTTP/1.1",
+      "false_positive": false,
+      "sqli_prob": 0.0
+    },
+    {
+      "description": "JSON Benign Feedback with quote",
+      "request": "POST /api/v1/feedback HTTP/1.1",
+      "false_positive": true,
+      "sqli_prob": 0.8067
+    }
+  ]
+}

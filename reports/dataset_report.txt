@@ -1,0 +1,40 @@
+====================================
+DATASET REPORT
+====================================
+Raw samples: 13115
+Failed parse: 0
+Clean samples: 13115
+Duplicate requests: 2797
+Unknown/unlabeled: 0
+
+Normal: 4204 (32.05%)
+SQLi: 8911 (67.95%)
+
+Attack types:
+  - sqli_boolean: 409
+  - sqli_blind_boolean: 409
+  - sqli_union: 409
+  - sqli_error: 409
+  - sqli_blind_error: 409
+  - sqli_blind_time: 409
+  - sqli_numeric: 409
+  - sqli_string: 409
+  - sqli_nested: 409
+  - sqli_subquery: 409
+  - sqli_enum: 409
+  - sqli_info_schema: 409
+  - sqli_obfuscated: 409
+  - sqli_comment_var: 409
+  - sqli_whitespace_var: 409
+  - sqli_case_var: 409
+  - sqli_param_var: 409
+  - sqli_mixed: 409
+  - sqli_json: 409
+  - sqli_auth: 387
+  - sqli_syntax_probe: 380
+  - sqli_encoded: 373
+
+Unique IP: 1
+Unique path: 10
+Unique query: 6928
+====================================
