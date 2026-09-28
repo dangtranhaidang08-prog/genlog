@@ -206,6 +206,7 @@ def run_latency_benchmark(model, vec, cols, iterations: int = 50):
         "is_json_payload": is_json, "json_depth": json_depth, "param_count_body": param_count_body
     }
 
+    feat_dict = extract_features_from_row(row_dict)
     t_feat_start = time.perf_counter()
     for _ in range(iterations):
         feat_dict = extract_features_from_row(row_dict)
@@ -215,6 +216,7 @@ def run_latency_benchmark(model, vec, cols, iterations: int = 50):
     X_num = np.array([num_vals], dtype=np.float32)
     X_text = [feat_dict["text"]]
 
+    X_tfidf = vec.transform(X_text)
     t_vec_start = time.perf_counter()
     for _ in range(iterations):
         X_tfidf = vec.transform(X_text)

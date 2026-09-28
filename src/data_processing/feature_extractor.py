@@ -1,6 +1,7 @@
 import re
 import urllib.parse
 import sys
+from typing import Optional, Dict, Any
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -10,10 +11,7 @@ project_root = file_path.parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-try:
-    from src.config import DATASET_CSV, FEATURES_CSV
-except ImportError:
-    from config import DATASET_CSV, FEATURES_CSV
+from src.config import DATASET_CSV, FEATURES_CSV
 
 SQL_KEYWORDS = [
     "select", "union", "from", "where", "or", "and", "insert", "update",
@@ -21,7 +19,7 @@ SQL_KEYWORDS = [
     "sleep", "benchmark", "version"
 ]
 
-def extract_features_from_row(row: dict, ip_stats: dict = None) -> dict:
+def extract_features_from_row(row: dict, ip_stats: Optional[dict] = None) -> dict:
     """
     Extract comprehensive 81 features from a single HTTP request row.
     """
@@ -46,7 +44,7 @@ def extract_features_from_row(row: dict, ip_stats: dict = None) -> dict:
     response_time = int(row.get("response_time", 0))
     ip = str(row.get("ip", "127.0.0.1"))
 
-    feats = {}
+    feats: Dict[str, Any] = {}
 
     # A. URL & Body Length Features
     feats["url_length"] = len(url)
@@ -179,13 +177,8 @@ def main():
     feat_df = pd.DataFrame(extracted_rows)
     feat_df.to_csv(FEATURES_CSV, index=False, encoding="utf-8")
 
-    print("====================================")
-    print("FEATURE EXTRACTION COMPLETED")
-    print("====================================")
-    print(f"Total processed requests: {len(feat_df)}")
-    print(f"Total extracted features: {len(feat_df.columns)}")
-    print(f"Output saved to: {FEATURES_CSV}")
-    print("====================================\n")
+    print(f"  [✓] Hoàn thành: Đã trích xuất {len(feat_df.columns)} đặc trưng cho {len(feat_df):,} requests -> {FEATURES_CSV}")
+
 
 if __name__ == "__main__":
     main()

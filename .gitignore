@@ -1,4 +1,3 @@
-# Python bytecode & Environment
 __pycache__/
 *.pyc
 *.pyo
@@ -7,18 +6,9 @@ __pycache__/
 .venv/
 env/
 venv/
-
-# System & IDE files
 .DS_Store
-.vscode/
-.idea/
-*.swp
-
-# Environment & Secrets
 .env
 *.env
-
-# Temporary scratch folder & Log files
-scratch/
 *.log
+scratch/
 data/raw_logs/access.log

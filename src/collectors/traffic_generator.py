@@ -10,18 +10,15 @@ import urllib.parse
 import urllib.request
 import pandas as pd
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-try:
-    from src.config import PAYLOADS_ALL_CSV, RAW_LOG_FILE, RAW_LOGS_DIR
-except ImportError:
-    from config import PAYLOADS_ALL_CSV, RAW_LOG_FILE, RAW_LOGS_DIR
+from src.config import PAYLOADS_ALL_CSV, RAW_LOG_FILE, RAW_LOGS_DIR
 
-def convert_payload_to_http_request(payload: str, attack_type: str = "", rng: random.Random = None) -> Tuple[str, str, str, str, str, str]:
+def convert_payload_to_http_request(payload: str, attack_type: str = "", rng: Optional[random.Random] = None) -> Tuple[str, str, str, str, str, str]:
     """
     Convert payload string into HTTP request components:
     returns (method, url, path, query, body, content_type)
@@ -119,7 +116,7 @@ def run_live_http_traffic(df: pd.DataFrame, target_url: str, delay: float = 0.05
     fail_cnt = 0
     rng = random.Random(42)
 
-    for idx, row in sample_df.iterrows():
+    for loop_idx, (_, row) in enumerate(sample_df.iterrows(), start=1):
         payload = str(row["payload"])
         attack_type = str(row["attack_type"])
         label = int(row["label"])
@@ -151,16 +148,16 @@ def run_live_http_traffic(df: pd.DataFrame, target_url: str, delay: float = 0.05
                 with urllib.request.urlopen(req, timeout=3.0) as response:
                     status_code = response.getcode()
                 success_cnt += 1
-                if (idx + 1) % 100 == 0:
-                    print(f"[{idx + 1}/{len(sample_df)}] Live request sent -> Status {status_code}")
+                if loop_idx % 100 == 0:
+                    print(f"[{loop_idx}/{len(sample_df)}] Live request sent -> Status {status_code}")
             except Exception as e:
                 fail_cnt += 1
-                status_code = e.code if hasattr(e, 'code') else 502
+                status_code = getattr(e, 'code', 502)
         else:
             success_cnt += 1
             status_code = 200
-            if (idx + 1) % 2000 == 0 or idx == len(sample_df) - 1:
-                print(f"[{idx + 1}/{len(sample_df)}] Generated log entry for {method} {full_target[:45]}...")
+            if loop_idx % 2000 == 0 or loop_idx == len(sample_df):
+                print(f"[{loop_idx}/{len(sample_df)}] Generated log entry for {method} {full_target[:45]}...")
 
         resp_time_us = int((time.time() - start_t) * 1000000)
         timestamp = time.strftime("%d/%b/%Y:%H:%M:%S +0700", time.localtime())

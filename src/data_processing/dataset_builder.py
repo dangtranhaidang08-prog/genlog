@@ -2,6 +2,7 @@ import hashlib
 import re
 import urllib.parse
 import sys
+from typing import Tuple
 import pandas as pd
 from pathlib import Path
 
@@ -10,10 +11,7 @@ project_root = file_path.parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-try:
-    from src.config import PARSED_LOG_CSV, DATASET_CSV, DATASET_REPORT_FILE, REPORTS_DIR
-except ImportError:
-    from config import PARSED_LOG_CSV, DATASET_CSV, DATASET_REPORT_FILE, REPORTS_DIR
+from src.config import PARSED_LOG_CSV, DATASET_CSV, DATASET_REPORT_FILE, REPORTS_DIR
 
 def compute_request_hash(path: str, query: str) -> str:
     """
@@ -32,7 +30,7 @@ def mask_sensitive_tokens(query_str: str) -> str:
     masked = re.sub(r'PHPSESSID=[a-zA-Z0-9]+', 'PHPSESSID=<TOKEN>', masked)
     return masked
 
-def map_label(row) -> tuple[int, str]:
+def map_label(row) -> Tuple[int, str]:
     """
     Map label strictly based on authoritative attack_type and existing_label.
     """
@@ -122,8 +120,8 @@ Unique query: {df_clean['decoded_query'].nunique()}
     with open(DATASET_REPORT_FILE, "w", encoding="utf-8") as f:
         f.write(report_content)
 
-    print(report_content)
-    print(f"Dataset report saved to: {DATASET_REPORT_FILE}")
+    print(f"  [✓] Hoàn thành: {total_clean:,} mẫu sạch (Normal: {normal_cnt:,} | SQLi: {sqli_cnt:,}) -> {DATASET_CSV}")
+    print(f"  [i] Báo cáo chi tiết: {DATASET_REPORT_FILE}")
 
 if __name__ == "__main__":
     main()

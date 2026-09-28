@@ -21,3 +21,9 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["src*"]
+
+[tool.pyrefly]
+search-path = ["."]
+disable-search-path-heuristics = true
+
+

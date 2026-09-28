@@ -6,6 +6,7 @@ import sys
 import re
 import urllib.parse
 from pathlib import Path
+from typing import Any, List, Optional
 import pandas as pd
 import numpy as np
 import scipy.sparse as sp
@@ -68,13 +69,25 @@ def predict_request(
     url_in: str = "",
     body_in: str = "",
     content_type_in: str = "",
-    model = None,
-    vectorizer = None,
-    feature_cols = None
+    model: Any = None,
+    vectorizer: Any = None,
+    feature_cols: Optional[List[str]] = None
 ):
     """
     Predict SQL Injection risk for an HTTP request (GET query or POST body / JSON).
     """
+    if model is None or vectorizer is None or feature_cols is None:
+        _model, _vectorizer, _feature_cols = load_models()
+        if model is None:
+            model = _model
+        if vectorizer is None:
+            vectorizer = _vectorizer
+        if feature_cols is None:
+            feature_cols = _feature_cols
+
+    assert feature_cols is not None
+    assert vectorizer is not None
+    assert model is not None
     if request_str and not url_in:
         req_line = request_str
     elif url_in:

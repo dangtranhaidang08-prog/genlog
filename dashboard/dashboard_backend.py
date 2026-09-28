@@ -109,7 +109,7 @@ def start_log_tailer():
             sftp = ssh.open_sftp()
             
             stat = sftp.stat(remote_log_path)
-            curr_size = stat.st_size
+            curr_size: int = int(stat.st_size) if stat.st_size is not None else 0
 
             if last_remote_size == 0:
                 last_remote_size = max(0, curr_size - 4096)

@@ -32,45 +32,37 @@ def main():
 
     args = parser.parse_args()
 
+    print("\n" + "="*72)
+    print("          AI WEB ATTACK DETECTION (SQLi) - PIPELINE RUNNER")
+    print("="*72)
+
     if not args.skip_gen:
-        print("\n==================================================")
-        print("PHASE 1: GENERATING SYNTHETIC PAYLOADS")
-        print("==================================================")
+        print("\n[Giai đoạn 1/2] Sinh tập mẫu Payload & Tấn công mô phỏng...")
         gen_script = ROOT_DIR / "src" / "collectors" / "dvwa_generator" / "payload_generator.py"
         if gen_script.exists():
             subprocess.run([sys.executable, str(gen_script), "--count", str(args.count)], check=True)
 
-        print("\n==================================================")
-        print("PHASE 2: COLLECTING APACHE ACCESS LOGS")
-        print("==================================================")
+        print("\n[Giai đoạn 2/2] Thu thập Access Log qua Traffic Generator...")
         traffic_script = ROOT_DIR / "src" / "collectors" / "traffic_generator.py"
         if traffic_script.exists():
             subprocess.run([sys.executable, str(traffic_script), "--target", args.target, "--count", str(args.count)], check=True)
 
-    print("\n==================================================")
-    print("STEP 1: PARSING RAW APACHE ACCESS LOGS")
-    print("==================================================")
+    print("\n[Bước 1/4] Phân tích cú pháp Apache Access Log...")
     run_parser()
 
-    print("\n==================================================")
-    print("STEP 2: DATA CLEANING, TOKEN MASKING & LABELING")
-    print("==================================================")
+    print("\n[Bước 2/4] Tiền xử lý, che giấu token CSRF & gán nhãn...")
     run_builder()
 
-    print("\n==================================================")
-    print("STEP 3: FEATURE EXTRACTION (80 FEATURES + CHAR TF-IDF)")
-    print("==================================================")
+    print("\n[Bước 3/4] Trích xuất vector đặc trưng (Numerical + Char TF-IDF)...")
     run_extractor()
 
-    print("\n==================================================")
-    print("STEP 4: MODEL TRAINING & EVALUATION (RANDOM FOREST)")
-    print("==================================================")
+    print("\n[Bước 4/4] Khởi tạo & Huấn luyện mô hình học máy...")
     run_trainer()
 
-    print("\n==================================================")
-    print("PIPELINE COMPLETED SUCCESSFULLY!")
-    print("Run `python predict.py` to test individual HTTP requests.")
-    print("==================================================\n")
+    print("="*72)
+    print("  [✓] TOÀN BỘ PIPELINE ĐÃ HOÀN TẤT THÀNH CÔNG!")
+    print("  Sử dụng `python predict.py` hoặc chạy dashboard để giám sát thời gian thực.")
+    print("="*72 + "\n")
 
 if __name__ == "__main__":
     main()

@@ -11,10 +11,7 @@ project_root = file_path.parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-try:
-    from src.config import RAW_LOG_FILE, PARSED_LOG_CSV, DATA_DIR
-except ImportError:
-    from config import RAW_LOG_FILE, PARSED_LOG_CSV, DATA_DIR
+from src.config import RAW_LOG_FILE, PARSED_LOG_CSV, DATA_DIR
 
 # Combined Log Format Regex Pattern (with optional response_time at the end)
 LOG_PATTERN = re.compile(
@@ -194,24 +191,8 @@ def main():
     df = pd.DataFrame(parsed_records)
     df.to_csv(PARSED_LOG_CSV, index=False, encoding="utf-8")
 
-    print("====================================")
-    print("APACHE PARSER STATS")
-    print("====================================")
-    print(f"Total log lines: {len(parsed_records) + failed_lines}")
-    print(f"Successfully parsed: {len(parsed_records)}")
-    print(f"Failed: {failed_lines}")
-    print(f"Output: {PARSED_LOG_CSV}")
-    print("====================================")
+    print(f"  [✓] Hoàn thành: {len(parsed_records):,} dòng log phân tích thành công (lỗi: {failed_lines}) -> {PARSED_LOG_CSV}")
 
-    if not df.empty:
-        print("DATA VALIDATION")
-        print("====================================")
-        print(f"Shape: {df.shape}")
-        print(f"Columns: {list(df.columns)}")
-        print("Missing values:\n", df.isnull().sum())
-        print("\nFirst 3 rows preview:")
-        print(df[["ip", "method", "path", "query", "status", "attack_type"]].head(3))
-        print("====================================")
 
 if __name__ == "__main__":
     main()

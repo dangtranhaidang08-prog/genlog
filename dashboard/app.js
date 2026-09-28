@@ -27,7 +27,11 @@ document.addEventListener("DOMContentLoaded", () => {
     streamBtnText.textContent = "Pause Stream";
     let totalMonitored = 0;
 
-    // Category Doughnut Chart Setup
+    // Enforce pure light theme
+    document.body.classList.remove("theme-dark");
+    localStorage.removeItem("dashboard_theme");
+
+    // Category Bar Chart Setup
     let categoryChart;
     const categoryCounts = {
         "UNION": 0,
@@ -41,32 +45,64 @@ document.addEventListener("DOMContentLoaded", () => {
     function initCharts() {
         const catCtx = document.getElementById("categoryChart").getContext("2d");
         categoryChart = new Chart(catCtx, {
-            type: "doughnut",
+            type: "bar",
             data: {
                 labels: Object.keys(categoryCounts),
                 datasets: [{
+                    label: "Số lượng phát hiện",
                     data: Object.values(categoryCounts),
                     backgroundColor: [
-                        "#10b981", // UNION
-                        "#8b5cf6", // Boolean
-                        "#ef4444", // Time-based
-                        "#f59e0b", // Error-based
-                        "#ec4899", // JSON
-                        "#3b82f6"  // Normal
+                        "#059669", // UNION - Emerald
+                        "#7c3aed", // Boolean - Violet
+                        "#dc2626", // Time-based - Red
+                        "#d97706", // Error-based - Amber
+                        "#db2777", // JSON - Pink
+                        "#2563eb"  // Normal - Blue
                     ],
-                    borderWidth: 0
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    barThickness: 18,
+                    maxBarThickness: 24
                 }]
             },
             options: {
+                indexAxis: "y",
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: "right",
-                        labels: { color: "#94a3b8", font: { size: 11 } }
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: "rgba(15, 23, 42, 0.9)",
+                        titleFont: { size: 12, weight: "600" },
+                        bodyFont: { size: 12 },
+                        padding: 10,
+                        cornerRadius: 6
                     }
                 },
-                cutout: "70%"
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: {
+                            color: "#f1f5f9"
+                        },
+                        ticks: {
+                            color: "#64748b",
+                            precision: 0,
+                            font: { size: 11 }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: "#334155",
+                            font: { size: 12, weight: "600" }
+                        }
+                    }
+                }
             }
         });
     }
@@ -227,6 +263,11 @@ document.addEventListener("DOMContentLoaded", () => {
         streamTbody.innerHTML = "";
         totalMonitored = 0;
         streamCount.textContent = "0";
+        Object.keys(categoryCounts).forEach(k => categoryCounts[k] = 0);
+        if (categoryChart) {
+            categoryChart.data.datasets[0].data = Object.values(categoryCounts);
+            categoryChart.update();
+        }
     });
 
     // Initial Fetch

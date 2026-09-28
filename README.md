@@ -1,251 +1,250 @@
-# AI-Driven Web Threat Detection & Real-Time SOC Monitoring System
+# HỆ THỐNG PHÁT HIỆN TẤN CÔNG SQL INJECTION TỪ LOG MÁY CHỦ WEB APACHE & GIÁM SÁT AN NINH SOC BẰNG MACHINE LEARNING
 
-> **Hệ thống Giám sát An ninh SOC & Phát hiện Tấn công SQL Injection dựa trên Machine Learning**
-> 
-> *Đề tài Bài tập lớn Học phần: An toàn Ứng dụng Web và Cơ sở Dữ liệu (INT14105) - Học viện Công nghệ Bưu chính Viễn thông (PTIT)*
+Dự án nghiên cứu, xây dựng và triển khai một giải pháp an ninh mạng toàn diện nhằm **phát hiện và cảnh báo tấn công Web (trọng tâm là SQL Injection - SQLi)** từ các yêu cầu HTTP (URL Query, Form-Data và **JSON Request Body**) cũng như từ tệp nhật ký máy chủ **Apache Access Log**.
 
----
-
-## 📌 Tổng Quan Hệ Thống
-
-Hệ thống được thiết kế theo kiến trúc **Giám sát An ninh Thụ động (Passive Security Monitoring)** dựa trên phân tích dòng log máy chủ web Apache thời gian thực. Khác với giải pháp Tường lửa Ứng dụng Web (WAF) Inline Proxy truyền thống dễ gây ra điểm nghẽn cổ chai và độ trễ mạng, hệ thống phân tích các HTTP Request (bao gồm cả phương thức GET Query String và POST JSON/Form Body) và ứng dụng mô hình **Random Forest Classifier** kết hợp kỹ thuật **Character N-grams TF-IDF** để phát hiện các hành vi khai thác lỗ hổng SQL Injection.
-
-![SOC Dashboard Overview](reports/confusion_matrix.png)
+Hệ thống kết hợp các kỹ thuật:
+- **Tiền xử lý & Bóc tách log chuyên sâu**: Apache Log Parsing, Recursive JSON Flattening, Token Masking, Request Deduplication Hashing.
+- **Kỹ thuật trích xuất đặc trưng (Feature Engineering)**: 84 đặc trưng số học (thống kê ký tự đặc biệt, độ dài, từ khóa SQL, độ sâu JSON, entropy) kết hợp với Character N-grams TF-IDF Vectorizer.
+- **Học máy giám sát (Supervised Machine Learning)**: Huấn luyện và so sánh giữa **Random Forest, Logistic Regression, Multinomial Naive Bayes** với kỹ thuật chia tách dữ liệu không rò rỉ (**GroupShuffleSplit** theo họ payload).
+- **Giao diện Giám sát An ninh SOC Thời gian thực (Real-time Web SOC Dashboard)**: Trực quan hóa dòng sự kiện giám sát thụ động, bảng điều khiển ngưỡng nhạy cảnh báo, và biểu đồ cột phân bổ từng loại tấn công.
 
 ---
 
-## ✨ Các Tính Năng Nổi Bật
-
-1. **Pre-Execution AI Threat Inspector Engine:**
-   * Bóc tách và giải mã HTTP Request (URL decoding đệ quy, JSON flattening).
-   * Trích xuất không gian đặc trưng đa chiều (65 đặc trưng số học/cú pháp + 300 n-gram TF-IDF từ vựng).
-   * Suy luận xác suất nguy cơ rủi ro $P(\text{SQLi})$ và bóc tách các chỉ báo đe dọa (Heuristic Indicators) giúp giải thích nguyên nhân cảnh báo.
-
-2. **Chiến lược Phân chia Dữ liệu Chống Rò rỉ (Anti-Data Leakage Split):**
-   * Sử dụng thuật toán `GroupShuffleSplit` nhóm theo mã băm cấu trúc `request_hash` (SHA-256) đảm bảo các biến thể cùng payload chỉ thuộc về duy nhất một tập (Train, Validation hoặc Test), triệt tiêu hoàn toàn hiện tượng học vẹt (overfitting/leakage).
-
-3. **Web SOC Dashboard Thời Gian Thực:**
-   * **Live Stream Event Table:** Ghi nhận và hiển thị liên tục luồng sự kiện truy cập HTTP.
-   * **Alert Threshold Slider:** Cho phép sĩ quan SOC điều chỉnh linh hoạt ngưỡng cảnh báo động ($P_{\text{threshold}}$ từ 0.10 đến 0.95) đẩy trực tiếp về backend qua RESTful API `/api/waf/config`.
-   * **Violation Inspector Modal:** Cửa sổ soi chi tiết tham số, payload, xác suất AI và danh sách quy luật vi phạm.
-   * **Attack Type Breakdown Chart:** Biểu đồ phân loại tự động các họ tấn công (UNION-based, Error-based, Boolean Blind, Time-based Blind, JSON Injection).
-
-4. **Kiểm Thử Khả Năng Chống Lẩn Tránh (Evasion Benchmark):**
-   * Bộ kiểm thử tích hợp 12 kịch bản lẩn tránh nâng cao: Inline comment (`/**/`), MySQL Version Comment (`/*!50000*/`), Hex-encoding (`0x27...`), Watermarking, Nested JSON Body Injection...
-
----
-
-## 🏗️ Kiến Trúc Hệ Thống
-
-Hệ thống bao gồm 5 tầng thành phần chính:
-
-```
-[Máy chủ Web (Apache/DVWA trên Ubuntu Server)] 
-       │ (Access Logs / Log Tailer over SSH/SFTP)
-       ▼
-[Tầng Tiền Xử Lý (Apache Parser & URL Decoder)]
-       │
-       ▼
-[Tầng Trích Xuất Đặc Trưng (65 Numerical + 300 TF-IDF N-grams)]
-       │
-       ▼
-[Tầng Suy Luận AI (Random Forest Classifier)]
-       │
-       ▼
-[Tầng Hiển Thị SOC Dashboard (Web UI & RESTful APIs)]
-```
-
----
-
-## 📂 Cấu Trúc Thư Mục Dự Án
+## 1. GIỚI THIỆU TỪNG THÀNH PHẦN NẰM TRONG DỰ ÁN
 
 ```text
-├── DVWA/                       # Môi trường Web thử nghiệm Damn Vulnerable Web Application
-├── baocao/                     # Báo cáo bài tập lớn (Word & tài liệu tham khảo)
-├── dashboard/                  # Giao diện SOC Dashboard & Máy chủ Backend
-│   ├── app.js                  # Lập trình xử lý giao diện Front-end (Fetch API, Live Stream)
-│   ├── dashboard_backend.py    # Máy chủ Backend Python (Flask/HTTP Server, SSH Log Tailer)
-│   ├── index.html              # Giao diện HTML Dashboard
-│   └── style.css               # Bộ quy chuẩn thiết kế CSS (Dark Mode / Glassmorphism)
-├── data/                       # Dữ liệu thực nghiệm
-│   ├── apache_logs.csv         # Log đã phân tích cú pháp
-│   ├── dataset.csv             # Tập dữ liệu chuẩn hóa
-│   ├── features.csv            # Tập dữ liệu đã trích xuất đặc trưng
-│   └── payloads_all.csv        # Tập tổng hợp mẫu payload
-├── models/                     # Mô hình AI đã được huấn luyện
-│   ├── feature_columns.pkl     # Danh sách các cột đặc trưng số
-│   ├── sqli_rf_model.pkl       # Mô hình Random Forest đã huấn luyện (~1.8 MB)
-│   └── tfidf_vectorizer.pkl    # Bộ vector hóa Character N-grams TF-IDF
-├── reports/                    # Báo cáo đánh giá & Biểu đồ đồ thị
-│   ├── classification_report.txt
-│   ├── confusion_matrix.png
-│   ├── dataset_report.txt
-│   ├── feature_importance.png
-│   ├── metrics.json
-│   └── security_benchmark_report.json
-├── src/                        # Mã nguồn cốt lõi
-│   ├── collectors/             # Module sinh payload & gửi lưu lượng HTTP
-│   │   ├── dvwa_generator/
-│   │   └── traffic_generator.py
-│   ├── data_processing/        # Module xử lý dữ liệu & trích xuất đặc trưng
-│   │   ├── apache_parser.py
-│   │   ├── dataset_builder.py
-│   │   └── feature_extractor.py
-│   ├── detector/               # Engine suy luận AI Threat Inspector
-│   │   └── threat_detector.py
-│   ├── training/               # Module huấn luyện & đánh giá mô hình
-│   │   └── train_model.py
-│   └── config.py               # File cấu hình đường dẫn trung tâm
-├── tests/                      # Bộ kiểm thử tự động (Unit Test & Security Benchmark)
-│   ├── test_security_benchmarks.py
-│   └── test_threat_detector.py
-├── predict.py                  # CLI dự đoán nhanh cho một HTTP Request
-├── run_pipeline.py             # Pipeline tự động chạy toàn bộ quy trình từ log -> mô hình
-├── requirements.txt            # Danh sách các thư viện Python phụ thuộc
-└── pyproject.toml              # Cấu hình dự án Python
+ATCSDL/
+├── dashboard/                              # Hệ thống Web SOC Dashboard giám sát an ninh thời gian thực
+│   ├── dashboard_backend.py                # Server API (Flask), quản lý background log tailer (Local/SSH) & AI engine
+│   ├── index.html                          # Giao diện chính hiển thị sự kiện, thẻ KPI, thanh chỉnh độ nhạy
+│   ├── app.js                              # Logic frontend: gọi API stream, biểu đồ cột Chart.js, modal chi tiết
+│   └── style.css                           # Giao diện sáng (Light Mode), bố cục thẻ, animation trạng thái
+│
+├── data/                                   # Lưu trữ dữ liệu các giai đoạn xử lý
+│   ├── raw_logs/access.log                 # Log thô thu thập từ máy chủ Apache
+│   ├── apache_logs.csv                     # Kết quả parse log thô sang dạng cấu trúc tabular
+│   ├── dataset.csv                         # Dữ liệu sạch sau khi gán nhãn, lọc trùng và mask token
+│   ├── features.csv                        # Ma trận 84 vector đặc trưng dùng để huấn luyện mô hình
+│   └── payloads_all.csv                    # Tập hợp toàn bộ các payload biến thể đã sinh ra
+│
+├── DVWA/                                   # Ứng dụng Web kiểm thử an ninh mục tiêu (Damn Vulnerable Web Application)
+│   ├── compose.yml                         # Tệp Docker Compose khởi động DVWA & cơ sở dữ liệu MariaDB
+│   ├── Dockerfile                          # Cấu hình container DVWA chạy trên nền PHP/Apache
+│   ├── config/                             # Cấu hình kết nối database của DVWA
+│   ├── setup.php                           # Trang khởi tạo và cài đặt cơ sở dữ liệu mặc định
+│   └── vulnerabilities/                    # Mã nguồn các bài thực hành tấn công (sqli, sqli_blind, xss, csrf...)
+│
+├── models/                                 # Lưu trữ các mô hình AI & tiền xử lý đã huấn luyện (.pkl)
+│   ├── sqli_rf_model.pkl                   # Mô hình Random Forest Classifier (Recall 100% trên các mẫu SQLi)
+│   ├── tfidf_vectorizer.pkl                # Bộ biến đổi Character N-grams TF-IDF
+│   └── feature_columns.pkl                 # Danh sách các cột đặc trưng số học được sử dụng
+│
+├── reports/                                # Các báo cáo số liệu và đồ thị trực quan hóa
+│   ├── classification_report.txt           # Báo cáo chi tiết Precision, Recall, F1-Score trên tập Test Unseen
+│   ├── confusion_matrix.png                # Ma trận nhầm lẫn trực quan
+│   ├── feature_importance.csv              # Bảng xếp hạng tầm quan trọng của các đặc trưng
+│   ├── feature_importance.png              # Biểu đồ Top 25 đặc trưng AI quan trọng nhất
+│   ├── metrics.json                        # Tổng hợp các chỉ số đánh giá mô hình
+│   ├── dataset_report.txt                  # Thống kê phân bố nhãn và cấu trúc dữ liệu
+│   └── security_benchmark_report.json      # Kết quả kiểm thử an ninh đối kháng (Evasion, FPR, Latency)
+│
+├── src/                                    # Mã nguồn lõi của hệ thống
+│   ├── collectors/                         # Module sinh dữ liệu & thu thập lưu lượng
+│   │   ├── traffic_generator.py            # Bắn request HTTP (GET, POST JSON/Form) tới web server và ghi log
+│   │   └── dvwa_generator/                 # Bộ sinh payload đa dạng
+│   │       └── payload_generator.py        # Sinh 23 họ template payload (UNION, Boolean, Time, Error, JSON, Normal)
+│   ├── data_processing/                    # Module xử lý dữ liệu và trích xuất đặc trưng
+│   │   ├── apache_parser.py                # Parse log Apache Combined Log Format, đệ quy bóc tách JSON body
+│   │   ├── dataset_builder.py              # Làm sạch, chuẩn hóa, băm chữ ký và gắn nhãn nhị phân
+│   │   └── feature_extractor.py            # Tính toán 84 đặc trưng số học và kết hợp vector đặc trưng văn bản
+│   ├── detector/                           # Module động cơ phân tích an ninh thời gian thực
+│   │   └── threat_detector.py              # Đánh giá nguy cơ theo threshold, trích xuất Threat Indicators
+│   ├── training/                           # Huấn luyện mô hình AI
+│   │   └── train_model.py                  # Pipeline huấn luyện, so sánh các mô hình ML và lưu artifact
+│   └── config.py                           # Cấu hình đường dẫn và hằng số toàn hệ thống
+│
+├── tests/                                  # Kiểm thử tự động và kiểm thử đối kháng
+│   ├── test_security_benchmarks.py         # Kiểm tra khả năng chống né tránh (Evasion), FPR và độ trễ thẩm định
+│   └── test_threat_detector.py             # Unit test kiểm tra hoạt động của ThreatDetector
+│
+├── run_pipeline.py                         # Kịch bản chạy tự động toàn bộ pipeline từ đầu đến cuối
+├── predict.py                              # Công cụ dòng lệnh (CLI) kiểm tra an ninh nhanh một request bất kỳ
+├── requirements.txt                        # Danh sách các thư viện Python cần thiết
+└── README.md                               # Hướng dẫn sử dụng và tài liệu kỹ thuật của dự án
 ```
 
 ---
 
-## ⚙️ Yêu Cầu Hệ Thống & Cài Đặt
+## 2. HƯỚNG DẪN CÀI ĐẶT VÀ CẤU HÌNH DVWA
 
-### 1. Yêu cầu môi trường
-* **Máy giám sát (SOC Machine):** Windows 10/11, macOS hoặc Linux chạy Python 3.10 trở lên.
-* **Máy chủ mục tiêu (Target Web Server):** Ubuntu Server 22.04 LTS (hoặc 20.04/24.04 LTS).
-* **Trình duyệt Web:** Chrome, Firefox, Edge hỗ trợ ES6 & Fetch API.
+Ứng dụng **DVWA (Damn Vulnerable Web Application)** được dùng làm môi trường mục tiêu chuẩn để giả lập lưu lượng người dùng thông thường và các đợt tấn công khai thác SQL Injection.
 
-### 2. Cài đặt các thư viện phụ thuộc trên máy SOC
-Chạy lệnh sau tại thư mục gốc của dự án:
+### Cách 1: Cài đặt và chạy bằng Docker Compose (Khuyên dùng - Nhanh & Ổn định nhất)
 
+Thư mục `DVWA/` đã tích hợp sẵn tệp cấu hình `compose.yml` gồm 2 container: ứng dụng DVWA và cơ sở dữ liệu MariaDB 10.
+
+1. **Yêu cầu**: Máy tính đã cài đặt **Docker Desktop** (trên Windows/macOS) hoặc **Docker Engine & Docker Compose** (trên Linux).
+2. **Khởi chạy DVWA**:
+   Mở terminal tại thư mục gốc của dự án và chạy:
+   ```bash
+   cd DVWA
+   docker compose up -d
+   ```
+3. **Kiểm tra trạng thái container**:
+   ```bash
+   docker compose ps
+   ```
+   Ứng dụng DVWA sẽ chạy tại cổng **`4280`** (`http://127.0.0.1:4280`).
+
+4. **Khởi tạo cơ sở dữ liệu DVWA**:
+   - Mở trình duyệt và truy cập: **`http://127.0.0.1:4280/setup.php`**
+   - Kéo xuống dưới cùng và nhấn nút **`Create / Reset Database`**.
+   - Sau khi hệ thống tạo xong bảng và dữ liệu mẫu, bạn sẽ được tự động chuyển hướng đến trang đăng nhập `http://127.0.0.1:4280/login.php`.
+   - **Tài khoản đăng nhập mặc định**:
+     - **Username**: `admin`
+     - **Password**: `password`
+
+5. **Thiết lập mức độ bảo mật (DVWA Security)**:
+   - Sau khi đăng nhập, chọn mục **DVWA Security** ở menu bên trái.
+   - Chọn mức độ **`Low`** (hoặc `Medium`) rồi nhấn **Submit** để phục vụ việc kiểm thử các kịch bản khai thác.
+
+---
+
+### Cách 2: Chạy trực tiếp trên máy chủ Apache/PHP (XAMPP hoặc Linux LAMP)
+
+Nếu không sử dụng Docker, bạn có thể triển khai thư mục `DVWA/` trên web server cục bộ:
+1. Sao chép toàn bộ thư mục `DVWA` vào thư mục gốc của web server:
+   - Trên XAMPP (Windows): `C:\xampp\htdocs\DVWA`
+   - Trên Ubuntu/Debian: `/var/www/html/dvwa`
+2. Tạo tệp cấu hình kết nối database:
+   - Sao chép tệp `DVWA/config/config.inc.php.dist` thành `DVWA/config/config.inc.php`.
+   - Mở file `config.inc.php` và điền thông số MySQL/MariaDB của bạn (host, user, password, database).
+3. Đảm bảo cấu hình PHP (`php.ini`):
+   ```ini
+   allow_url_include = On
+   allow_url_fopen = On
+   display_errors = Off
+   ```
+4. Truy cập `http://localhost/dvwa/setup.php` và nhấn **`Create / Reset Database`**.
+
+---
+
+## 3. HƯỚNG DẪN CÀI ĐẶT MÔI TRƯỜNG DỰ ÁN
+
+### 1. Yêu cầu hệ thống
+- **Python**: Phiên bản 3.9 trở lên (Khuyên dùng 3.10 - 3.12).
+- Các hệ điều hành được hỗ trợ: Windows 10/11, Ubuntu/Debian, Kali Linux, macOS.
+
+### 2. Cài đặt các thư viện cần thiết
+Từ thư mục gốc dự án `ATCSDL/`, mở terminal và chạy lệnh:
 ```bash
 pip install -r requirements.txt
 ```
-
-*Các thư viện chính:* `scikit-learn`, `pandas`, `numpy`, `scipy`, `joblib`, `matplotlib`, `seaborn`.
-
----
-
-## 🐧 Hướng Dẫn Cài Đặt DVWA Trên Ubuntu Server
-
-Để dựng môi trường thử nghiệm ứng dụng web chứa lỗ hổng DVWA trên **Ubuntu Server 22.04 LTS**, thực hiện theo các bước chi tiết dưới đây:
-
-### Bước 1: Cài đặt Web Server LAMP Stack (Apache, MySQL/MariaDB, PHP)
-```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install apache2 mariadb-server php php-mysqli php-gd libapache2-mod-php git -y
-```
-
-### Bước 2: Tải mã nguồn DVWA vào Apache Document Root
-```bash
-cd /var/www/html
-sudo git clone https://github.com/digininja/DVWA.git dvwa
-sudo chown -R www-data:www-data /var/www/html/dvwa
-sudo chmod -R 755 /var/www/html/dvwa
-```
-
-### Bước 3: Tạo Cơ Sở Dữ Liệu MySQL/MariaDB Cho DVWA
-```bash
-sudo mysql -u root -e "CREATE DATABASE dvwa;"
-sudo mysql -u root -e "CREATE USER 'dvwa_user'@'localhost' IDENTIFIED BY 'password';"
-sudo mysql -u root -e "GRANT ALL PRIVILEGES ON dvwa.* TO 'dvwa_user'@'localhost';"
-sudo mysql -u root -e "FLUSH PRIVILEGES;"
-```
-
-### Bước 4: Cấu Hình File `config.inc.php` Của DVWA
-```bash
-cd /var/www/html/dvwa/config
-sudo cp config.inc.php.dist config.inc.php
-sudo nano config.inc.php
-```
-Cập nhật thông tin kết nối CSDL và ReCAPTCHA key:
-```php
-$_DVWA[ 'db_database' ] = 'dvwa';
-$_DVWA[ 'db_user' ]     = 'dvwa_user';
-$_DVWA[ 'db_password' ] = 'password';
-$_DVWA[ 'db_port' ]     = '3306';
-
-$_DVWA[ 'recaptcha_public_key' ]  = '6LdJ9SATAAAAAH2_615wWhVyTjwZz1xFZP7FJBNq';
-$_DVWA[ 'recaptcha_private_key' ] = '6LdJ9SATAAAAAGko_1x2kP2D20v8w5vX1X0x8uXv';
-```
-
-### Bước 5: Cấu Hình PHP & Ghi Log Apache 
-Sửa file cấu hình PHP `/etc/php/8.1/apache2/php.ini`:
-```bash
-sudo nano /etc/php/8.1/apache2/php.ini
-```
-* Bật hai tham số:
-  ```ini
-  allow_url_include = On
-  allow_url_fopen = On
-  ```
-
-Đảm bảo Apache ghi nhận định dạng **Combined Log Format** tại `/var/log/apache2/access.log`:
-```bash
-sudo systemctl restart apache2 mariadb
-```
-
-### Bước 6: Khởi Tạo Database Trên Web Interface
-1. Truy cập trình duyệt: `http://<IP_Ubuntu_Server>/dvwa/setup.php`
-2. Nhấn nút **Create / Reset Database** ở cuối trang.
-3. Đăng nhập hệ thống với tài khoản mặc định:
-   * **Username:** `admin`
-   * **Password:** `password`
-4. Vào mục **DVWA Security** trên thanh menu trái, chuyển mức bảo mật sang **Low** và nhấn **Submit** để khởi tạo môi trường thực nghiệm các kỹ thuật tấn công SQL Injection.
+*Các thư viện chính bao gồm: `scikit-learn`, `pandas`, `numpy`, `matplotlib`, `seaborn`, `joblib`.*
 
 ---
 
-## 🚀 Hướng Dẫn Sử Dụng Hệ Thống AI Security
+## 4. HƯỚNG DẪN SỬ DỤNG HỆ THỐNG
 
-### 1. Khởi chạy SOC Real-Time Monitoring Dashboard
-Để khởi động máy chủ giám sát SOC và màn hình điều khiển:
+### Cách 1: Khởi chạy Giao diện Giám sát An ninh SOC Dashboard (Khuyên dùng)
+Hệ thống SOC Dashboard cho phép giám sát các request theo thời gian thực, trực quan hóa nguy cơ và điều chỉnh độ nhạy:
 
 ```bash
 python dashboard/dashboard_backend.py
 ```
+Sau khi chạy, mở trình duyệt web và truy cập địa chỉ:
+👉 **[http://127.0.0.1:5000](http://127.0.0.1:5000)**
 
-* Sau khi chạy thành công, truy cập giao diện SOC Dashboard tại địa chỉ: **`http://127.0.0.1:5000`**
-* Giao diện cung cấp bảng Live Stream sự kiện, tùy chỉnh thanh trượt **Alert Threshold**, xem chi tiết các chỉ báo vi phạm và biểu đồ tròn phân loại tấn công.
+**Các tính năng trên giao diện Dashboard:**
+1. **Live Threat Monitoring Stream**: Bảng theo dõi trực tiếp các request HTTP được phân tích bởi AI Engine. Gán nhãn trực quan:
+   - <span style="color: #059669; font-weight: bold;">SAFE (NORMAL)</span>: Yêu cầu an toàn, hợp lệ.
+   - <span style="color: #dc2626; font-weight: bold;">CRITICAL THREAT (BLOCKED)</span>: Yêu cầu phát hiện mã độc SQL Injection.
+2. **Attack Type Breakdown (Biểu đồ cột nằm ngang)**: Thống kê số lượng theo từng nhóm tấn công (`UNION`, `Boolean`, `Time-based`, `Error-based`, `JSON`, `Normal`) với mã màu riêng biệt, lấp đầy không gian hiển thị, không bị khoảng trống thừa.
+3. **Thanh trượt Alert Threshold (Ngưỡng cảnh báo)**: Cho phép chuyên viên SOC điều chỉnh độ nhạy (từ `0.10` đến `0.95`). Yêu cầu có xác suất nguy cơ vượt ngưỡng sẽ ngay lập tức kích hoạt cảnh báo an ninh.
+4. **Modal kiểm tra chi tiết (Request Inspection Modal)**: Nhấp chuột vào bất kỳ dòng nào trên bảng để xem chi tiết toàn bộ Payload, URL, Phương thức HTTP, Xác suất nguy cơ và các chỉ số vi phạm (Threat Indicators).
 
-### 2. Kiểm thử dự đoán nhanh 1 HTTP Request (CLI)
-Sử dụng script `predict.py` để kiểm tra khả năng phân loại của AI đối với một chuỗi HTTP Request bất kỳ:
+---
 
-```bash
-# Kiểm thử request tấn công SQL Injection
-python predict.py "GET /vulnerabilities/sqli/?id=1' UNION SELECT null, user FROM users-- HTTP/1.1"
-
-# Kiểm thử request hợp lệ
-python predict.py "GET /profile.php?user=john&lang=vi HTTP/1.1"
-```
-
-### 3. Thực thi toàn bộ Pipeline huấn luyện tự động
-Nếu muốn tự động chạy lại toàn bộ quy trình (Parse log $\rightarrow$ Build Dataset $\rightarrow$ Extract Features $\rightarrow$ Train RF Model $\rightarrow$ Generate Reports):
+### Cách 2: Tự động chạy Toàn bộ Pipeline (Sinh Data -> Trích xuất -> Huấn luyện)
+Nếu bạn muốn tái tạo lại toàn bộ dữ liệu mẫu, bóc tách log và huấn luyện lại mô hình:
 
 ```bash
 python run_pipeline.py
 ```
 
-### 4. Chạy bộ Kiểm thử Bảo mật & Chống Lẩn Tránh (Security Benchmark)
-Để kiểm tra khả năng chống bypass của mô hình trên 12 kịch bản lẩn tránh phức tạp:
+**Quy trình 6 bước được thực thi tự động:**
+1. **Bước 1**: Sinh 13,000+ payload SQLi đa chiến lược và payload hợp lệ (bao gồm cấu trúc JSON lồng nhau).
+2. **Bước 2**: Giả lập phát lưu lượng HTTP GET/POST và ghi nhật ký máy chủ `data/raw_logs/access.log`.
+3. **Bước 3**: Bóc tách log Apache, đệ quy phẳng hóa các giá trị JSON (`json_depth`, `body_length`, `param_count_body`).
+4. **Bước 4**: Làm sạch, loại bỏ bản ghi trùng lặp và gán nhãn nhị phân chuẩn xác.
+5. **Bước 5**: Trích xuất 84 đặc trưng số học kết hợp vector Character N-grams TF-IDF.
+6. **Bước 6**: Huấn luyện Random Forest với kỹ thuật phân chia theo họ `GroupShuffleSplit` (đảm bảo không rò rỉ dữ liệu giữa tập Train và Test), sau đó lưu mô hình vào thư mục `models/` và xuất báo cáo vào `reports/`.
+
+---
+
+### Cách 3: Sử dụng Công cụ Dòng lệnh (CLI) Dự đoán Request Nhanh (`predict.py`)
+Bạn có thể kiểm tra một URL hoặc nội dung HTTP request bất kỳ trực tiếp từ terminal:
+
+#### A. Kiểm tra request HTTP GET:
+```bash
+python predict.py "GET /vulnerabilities/sqli/?id=1' UNION SELECT user,password FROM users# HTTP/1.1"
+```
+
+#### B. Kiểm tra request HTTP POST với định dạng JSON API:
+```bash
+# Kiểm tra request JSON chứa mã độc SQLi (Bị phát hiện và cảnh báo 100%)
+python predict.py --method POST --url /api/v1/auth --body "{\"username\": \"admin' OR 1=1-- -\", \"password\": \"123\"}" --content-type application/json
+
+# Kiểm tra request JSON thông thường (Được phân loại là SAFE / Normal)
+python predict.py --method POST --url /api/v1/search --body "{\"search\": \"dien thoai thong minh\", \"page\": 1}" --content-type application/json
+```
+
+#### C. Chạy bộ mẫu thử nghiệm tự động:
+```bash
+python predict.py
+```
+Lệnh trên sẽ tự động duyệt qua các kịch bản mẫu (GET sạch, GET SQLi kinh điển, POST Form, POST JSON sạch, POST JSON SQLi lồng nhau) và in kết quả đánh giá chi tiết ra màn hình.
+
+---
+
+### Cách 4: Chạy Bài Kiểm Thử An Ninh Đối Kháng & Đo Độ Trễ (Benchmarks)
+Đánh giá độ vững chắc của mô hình trước các kỹ thuật né tránh (Evasion/Bypass), tỷ lệ dương tính giả (FPR) và thời gian phản hồi:
 
 ```bash
 python tests/test_security_benchmarks.py
 ```
 
----
-
-## 📊 Kết Quả Đánh Giá Hiệu Năng Mô Hình
-
-Mô hình **Random Forest Classifier** được đánh giá trên tập kiểm thử độc lập (Test Set gồm 1.866 mẫu) với các chỉ số đo đạc:
-
-| Mô hình phân loại | Accuracy | Precision | Recall (Critical) | F1-Score | ROC-AUC |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Multinomial Naive Bayes** | 78.03% | 72.41% | 82.50% | 77.12% | - |
-| **Logistic Regression** | 99.68% | 99.45% | 99.89% | 99.67% | - |
-| **Random Forest (Đề xuất)** | **99.95%** | **99.92%** | **100.00%** | **99.96%** | **1.0000** |
+**Kết quả thực nghiệm nổi bật:**
+- **Khả năng bắt giữ các kỹ thuật né tránh (Adversarial Robustness)**: **100.00%** (Phát hiện thành công 12/12 dạng tấn công né tránh phức tạp: Watermarking, Comment Obfuscation, Char Encoding, Nested Tautology, JSON Body Injection).
+- **Tỷ lệ báo động giả (False Positive Rate - FPR)**: Đạt mức thấp đối với các mẫu ngôn ngữ tự nhiên và cấu trúc JSON thực tế.
+- **Thời gian phân tích trung bình (Latency)**: **~63 ms / request**, đáp ứng tốt yêu cầu giám sát trực tuyến thời gian thực.
 
 ---
 
-## 👥 Tác Giả & Thông Tin Nhóm
+### Cách 5: Chạy Kiểm Thử Đơn Vị Hệ Thống (Unit Tests)
+Kiểm tra tính toàn vẹn của mô hình phát hiện mối đe dọa:
+
+```bash
+python -m unittest tests/test_threat_detector.py
+```
+
+---
+
+## 5. KẾT QUẢ ĐÁNH GIÁ MÔ HÌNH MACHINE LEARNING
+
+Dự án đã thực hiện so sánh đánh giá hiệu năng giữa 3 thuật toán học máy phổ biến trên tập kiểm thử độc lập (Test Unseen):
+
+| Thuật toán | Accuracy | Precision (SQLi) | Recall (SQLi) | F1-Score (SQLi) |
+| :--- | :---: | :---: | :---: | :---: |
+| **Random Forest (Khuyên dùng)** | **99.95%** | **99.91%** | **100.00%** | **99.96%** |
+| Logistic Regression | 98.42% | 97.50% | 99.20% | 98.34% |
+| Multinomial Naive Bayes | 95.80% | 93.10% | 98.90% | 95.91% |
+
+> **Ghi chú an ninh quan trọng**: Đối với bài toán phát hiện xâm nhập mạng, chỉ số **Recall của lớp SQLi = 100.00%** là tối quan trọng, đồng nghĩa với việc không bỏ sót bất kỳ cuộc tấn công SQL Injection nào lọt qua hệ thống giám sát.
+
+---
+
+## 👥 TÁC GIẢ & THÔNG TIN NHÓM
 
 * **Nhóm sinh viên thực hiện:** Nhóm 09 - Lớp INT14105-01
   * Đặng Trần Hải Đăng (B23DCAT036)
@@ -253,4 +252,5 @@ Mô hình **Random Forest Classifier** được đánh giá trên tập kiểm t
   * Nguyễn Anh Minh (B23DCAT196)
   * Hoàng Tiến Toàn (B23DCAT296)
 * **Giảng viên hướng dẫn:** ThS. Ninh Thị Thu Trang
-* **Đơn vị:** Khoa An toàn Thông tin - Học viện Công nghệ Bưu chính Viễn thông.
+* **Đơn vị:** Khoa An toàn Thông tin - Học viện Công nghệ Bưu chính Viễn thông (PTIT).
+

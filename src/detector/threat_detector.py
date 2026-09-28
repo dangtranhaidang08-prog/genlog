@@ -11,7 +11,7 @@ import time
 import uuid
 import urllib.parse
 from pathlib import Path
-from typing import Dict, Tuple, Any, List
+from typing import Dict, Tuple, Any, List, Optional
 
 # Project root
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -206,7 +206,7 @@ class ThreatDetector:
             "threshold": self.threshold
         }
 
-    def set_config(self, threshold: float = None, **kwargs):
+    def set_config(self, threshold: Optional[float] = None, **kwargs):
         """Update runtime detection threshold."""
         if threshold is not None and 0.0 <= threshold <= 1.0:
             self.threshold = threshold

@@ -18,14 +18,9 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-try:
-    from src.config import (
-        PAYLOADS_ALL_CSV, PAYLOAD_GEN_REPORT_FILE, REPORTS_DIR, DATA_DIR
-    )
-except ImportError:
-    from config import (
-        PAYLOADS_ALL_CSV, PAYLOAD_GEN_REPORT_FILE, REPORTS_DIR, DATA_DIR
-    )
+from src.config import (
+    PAYLOADS_ALL_CSV, PAYLOAD_GEN_REPORT_FILE, REPORTS_DIR, DATA_DIR
+)
 
 # ==========================================
 # 1. VARIATION ENGINE HELPERS

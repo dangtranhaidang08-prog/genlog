@@ -1,6 +1,7 @@
 import json
 import joblib
 import sys
+import io
 import pandas as pd
 import numpy as np
 import scipy.sparse as sp
@@ -8,25 +9,20 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+if sys.platform == "win32" and hasattr(sys.stdout, "buffer"):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+
 file_path = Path(__file__).resolve()
 project_root = file_path.parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-try:
-    from src.config import (
-        FEATURES_CSV, MODELS_DIR, REPORTS_DIR,
-        MODEL_FILE, VEC_FILE, COLS_FILE,
-        CLASSIFICATION_REPORT_FILE, METRICS_JSON_FILE,
-        CONFUSION_MATRIX_FILE, FEATURE_IMPORTANCE_CSV, FEATURE_IMPORTANCE_PNG
-    )
-except ImportError:
-    from config import (
-        FEATURES_CSV, MODELS_DIR, REPORTS_DIR,
-        MODEL_FILE, VEC_FILE, COLS_FILE,
-        CLASSIFICATION_REPORT_FILE, METRICS_JSON_FILE,
-        CONFUSION_MATRIX_FILE, FEATURE_IMPORTANCE_CSV, FEATURE_IMPORTANCE_PNG
-    )
+from src.config import (
+    FEATURES_CSV, MODELS_DIR, REPORTS_DIR,
+    MODEL_FILE, VEC_FILE, COLS_FILE,
+    CLASSIFICATION_REPORT_FILE, METRICS_JSON_FILE,
+    CONFUSION_MATRIX_FILE, FEATURE_IMPORTANCE_CSV, FEATURE_IMPORTANCE_PNG
+)
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.ensemble import RandomForestClassifier
@@ -66,18 +62,8 @@ def main():
     normal_count = (df["label"] == 0).sum()
     sqli_count = (df["label"] == 1).sum()
 
-    print("====================================")
-    print("DATASET SUMMARY BEFORE TRAIN SPLIT")
-    print("====================================")
-    print(f"Total requests: {total_samples}")
-    print(f"Normal samples (0): {normal_count} ({normal_count/total_samples*100:.2f}%)")
-    print(f"SQLi samples (1): {sqli_count} ({sqli_count/total_samples*100:.2f}%)")
-    print(f"Unique request hashes: {df['request_hash'].nunique()}")
-    print("====================================")
-
     # Determine numeric feature columns
     numeric_cols = [col for col in df.columns if col not in EXCLUDE_COLS]
-    print(f"Using {len(numeric_cols)} numerical features (Pre-execution Threat Detection).")
 
     # 1. Group-based Split (GroupShuffleSplit) by request_hash to prevent data leakage
     gss1 = GroupShuffleSplit(n_splits=1, train_size=0.70, random_state=42)
@@ -90,13 +76,13 @@ def main():
     df_val = df_temp.iloc[val_idx].copy()
     df_test = df_temp.iloc[test_idx].copy()
 
-    print(f"\nSplit Sizes -> Train: {len(df_train)} (hashes: {df_train['request_hash'].nunique()}), "
-          f"Validation: {len(df_val)} (hashes: {df_val['request_hash'].nunique()}), "
-          f"Test: {len(df_test)} (hashes: {df_test['request_hash'].nunique()})")
-
-    print(f"Train distribution: Normal={(df_train['label']==0).sum()}, SQLi={(df_train['label']==1).sum()}")
-    print(f"Val distribution:   Normal={(df_val['label']==0).sum()}, SQLi={(df_val['label']==1).sum()}")
-    print(f"Test distribution:  Normal={(df_test['label']==0).sum()}, SQLi={(df_test['label']==1).sum()}")
+    print("\n" + "="*72)
+    print("                    AI MODEL TRAINING & EVALUATION")
+    print("="*72)
+    print(f"\n[1/4] Dataset Summary:")
+    print(f"  * Total Samples   : {total_samples:,} requests (Normal: {normal_count/total_samples*100:.1f}% | SQLi: {sqli_count/total_samples*100:.1f}%)")
+    print(f"  * Partitioning    : Train: {len(df_train):,} | Val: {len(df_val):,} | Test: {len(df_test):,}")
+    print(f"  * Features        : {len(numeric_cols)} numerical (Pre-execution) + 300 Char TF-IDF n-grams")
 
     # Extract numerical arrays
     X_train_num = df_train[numeric_cols].values.astype(np.float32)
@@ -123,11 +109,8 @@ def main():
     rf_cv = RandomForestClassifier(n_estimators=100, random_state=42, class_weight="balanced", n_jobs=-1)
     cv_scores = cross_val_score(rf_cv, X_train_combined, y_train, groups=df_train["request_hash"], cv=gkf, scoring="f1_weighted")
 
-    print("\n====================================")
-    print("CROSS-VALIDATION RESULTS (GroupKFold)")
-    print("====================================")
-    print(f"Mean CV F1: {cv_scores.mean():.4f}")
-    print(f"Std CV F1:  {cv_scores.std():.4f}")
+    print(f"\n[2/4] Cross-Validation (5-Fold GroupKFold CV on Train Set):")
+    print(f"  * Mean CV F1-Score    : {cv_scores.mean():.4f} (+/- {cv_scores.std():.4f})")
 
     # 4. Train Baseline Models (Logistic Regression & Naive Bayes)
     if len(np.unique(y_train)) > 1:
@@ -135,14 +118,16 @@ def main():
         lr_model.fit(X_train_combined, y_train)
         lr_pred_test = lr_model.predict(X_test_combined)
         lr_acc = accuracy_score(y_test, lr_pred_test)
+        lr_prec, lr_rec, lr_f1, _ = precision_recall_fscore_support(y_test, lr_pred_test, average="binary", pos_label=1, zero_division=0)
 
         nb_model = MultinomialNB()
         nb_model.fit(X_train_combined, y_train)
         nb_pred_test = nb_model.predict(X_test_combined)
         nb_acc = accuracy_score(y_test, nb_pred_test)
+        nb_prec, nb_rec, nb_f1, _ = precision_recall_fscore_support(y_test, nb_pred_test, average="binary", pos_label=1, zero_division=0)
     else:
-        lr_acc = 1.0
-        nb_acc = 1.0
+        lr_acc, lr_prec, lr_rec, lr_f1 = 1.0, 1.0, 1.0, 1.0
+        nb_acc, nb_prec, nb_rec, nb_f1 = 1.0, 1.0, 1.0, 1.0
 
     # 5. Train Main Model (Random Forest Classifier)
     rf_model = RandomForestClassifier(
@@ -170,18 +155,18 @@ def main():
         y_test, y_test_pred, labels=unique_labels, target_names=target_names, digits=4, zero_division=0
     )
 
-    print("\n====================================")
-    print("MODEL EVALUATION ON INDEPENDENT TEST SET")
-    print("====================================")
-    print(f"Baseline Logistic Regression Accuracy: {lr_acc:.4f}")
-    print(f"Baseline Multinomial Naive Bayes Acc:  {nb_acc:.4f}")
-    print(f"Random Forest Accuracy (Main):         {acc:.4f}")
-    print(f"SQLi Precision:                        {prec:.4f}")
-    print(f"SQLi Recall (Critical):                {rec:.4f}")
-    print(f"SQLi F1-score:                         {f1:.4f}")
-    print(f"ROC-AUC Score:                         {auc_score:.4f}")
-    print("\nClassification Details:\n")
-    print(report_str)
+    print(f"\n[3/4] Model Performance Comparison (Independent Test Set):")
+    header  = f"  {'Model':<23} | {'Accuracy':^10} | {'Precision':^10} | {'Recall':^10} | {'F1-Score':^10}"
+    divider = "  " + "-" * 67
+    print(divider)
+    print(header)
+    print(divider)
+    print(f"  {'Logistic Regression':<23} | {lr_acc*100:>9.2f}% | {lr_prec*100:>9.2f}% | {lr_rec*100:>9.2f}% | {lr_f1*100:>9.2f}%")
+    print(f"  {'Multinomial Naive B.':<23} | {nb_acc*100:>9.2f}% | {nb_prec*100:>9.2f}% | {nb_rec*100:>9.2f}% | {nb_f1*100:>9.2f}%")
+    print(f"  {'Random Forest (Main)':<23} | {acc*100:>9.2f}% | {prec*100:>9.2f}% | {rec*100:>9.2f}% | {f1*100:>9.2f}%")
+    print(divider)
+    print(f"  * ROC-AUC Score       : {auc_score:.4f}")
+    print(f"  * SQLi Recall         : {rec*100:.2f}% (Critical Attack Detection Rate)")
 
     # Save Reports
     with open(CLASSIFICATION_REPORT_FILE, "w", encoding="utf-8") as f:
@@ -199,7 +184,7 @@ def main():
         f.write(f"SQLi F1-score:                           {f1:.4f}\n")
         f.write(f"ROC-AUC Score:                           {auc_score:.4f}\n\n")
         f.write("Classification Details:\n")
-        f.write(report_str)
+        f.write(str(report_str))
 
     metrics_dict = {
         "dataset_samples": total_samples,
@@ -256,19 +241,19 @@ def main():
     plt.savefig(FEATURE_IMPORTANCE_PNG, dpi=300)
     plt.close()
 
-    print(f"Saved feature importances to: {FEATURE_IMPORTANCE_CSV} and {FEATURE_IMPORTANCE_PNG}")
-
     # 9. Save Model Artifacts
     joblib.dump(rf_model, MODEL_FILE)
     joblib.dump(vectorizer, VEC_FILE)
     joblib.dump(numeric_cols, COLS_FILE)
 
-    print("\n====================================")
-    print("SAVED MODEL ARTIFACTS")
-    print("====================================")
-    print(f"Model:             {MODEL_FILE}")
-    print(f"TF-IDF Vectorizer: {VEC_FILE}")
-    print(f"Feature Columns:   {COLS_FILE}")
+    print(f"\n[4/4] Saved Model Artifacts & Reports:")
+    print(f"  [+] Model Artifact     -> {MODEL_FILE}")
+    print(f"  [+] TF-IDF Vectorizer  -> {VEC_FILE}")
+    print(f"  [+] Feature Columns    -> {COLS_FILE}")
+    print(f"  [+] Confusion Matrix   -> {CONFUSION_MATRIX_FILE}")
+    print(f"  [+] Feature Importance -> {FEATURE_IMPORTANCE_PNG}")
+    print(f"  [+] Detailed Report    -> {CLASSIFICATION_REPORT_FILE}")
+    print("="*72 + "\n")
 
 if __name__ == "__main__":
     main()
