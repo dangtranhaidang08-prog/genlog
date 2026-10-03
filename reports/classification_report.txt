@@ -2,24 +2,24 @@
 SQL INJECTION RANDOM FOREST MODEL REPORT (AI THREAT DETECTOR)
 ====================================
 
-Total dataset samples: 13115
-Train: 9259, Validation: 1990, Test: 1866
+Total dataset samples: 2889
+Train: 2018, Validation: 434, Test: 437
 
-Mean CV F1: 0.9996 (+/- 0.0004)
-Baseline (Logistic Regression) Accuracy: 0.9968
-Baseline (Multinomial NB) Accuracy:      0.7803
-Random Forest Accuracy:                  0.9995
-SQLi Precision:                          0.9992
+Mean CV F1: 0.9995 (+/- 0.0010)
+Baseline (Logistic Regression) Accuracy: 0.9886
+Baseline (Multinomial NB) Accuracy:      0.9542
+Random Forest Accuracy:                  1.0000
+SQLi Precision:                          1.0000
 SQLi Recall:                             1.0000
-SQLi F1-score:                           0.9996
+SQLi F1-score:                           1.0000
 ROC-AUC Score:                           1.0000
 
 Classification Details:
               precision    recall  f1-score   support
 
-  Normal (0)     1.0000    0.9984    0.9992       628
-    SQLi (1)     0.9992    1.0000    0.9996      1238
+  Normal (0)     1.0000    1.0000    1.0000       103
+    SQLi (1)     1.0000    1.0000    1.0000       334
 
-    accuracy                         0.9995      1866
-   macro avg     0.9996    0.9992    0.9994      1866
-weighted avg     0.9995    0.9995    0.9995      1866
+    accuracy                         1.0000       437
+   macro avg     1.0000    1.0000    1.0000       437
+weighted avg     1.0000    1.0000    1.0000       437

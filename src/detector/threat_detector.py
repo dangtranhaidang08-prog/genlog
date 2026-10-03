@@ -1,10 +1,9 @@
 """
 AI-Driven SQL Injection Threat Detector & Real-Time Security Analyzer.
-Inspects HTTP request parameters, URL paths, query strings, and POST bodies (JSON / Form),
+Inspects HTTP request parameters, URL paths, query strings, and POST bodies,
 and autonomously detects malicious SQL injection attacks using trained Machine Learning models.
 """
 import html
-import json
 import re
 import sys
 import time
@@ -108,7 +107,7 @@ class ThreatDetector:
         (
             parsed_method, parsed_url, parsed_path, parsed_query, protocol,
             decoded_url, decoded_query, raw_body, decoded_body,
-            is_json, json_depth, param_count_body
+            param_count_body
         ) = parse_request_string(req_line, body=body, content_type=content_type)
 
         row_dict = {
@@ -128,8 +127,6 @@ class ThreatDetector:
             "body": raw_body,
             "decoded_body": decoded_body,
             "content_type": content_type,
-            "is_json_payload": is_json,
-            "json_depth": json_depth,
             "param_count_body": param_count_body
         }
 
@@ -161,7 +158,6 @@ class ThreatDetector:
             if "union" in t_low: attack_type = "sqli_union"
             elif "sleep" in t_low or "benchmark" in t_low: attack_type = "sqli_blind_time"
             elif "1/0" in t_low or "case" in t_low: attack_type = "sqli_blind_error"
-            elif is_json: attack_type = "sqli_json"
             else: attack_type = "sqli_boolean"
 
         # Update operational metrics
@@ -182,8 +178,6 @@ class ThreatDetector:
             "attack_type": attack_type,
             "indicators": indicators,
             "latency_ms": round(latency_ms, 3),
-            "is_json": bool(is_json),
-            "json_depth": json_depth,
             "param_count_body": param_count_body,
             "body_length": len(raw_body),
             "request_line": req_line,

@@ -1,4 +1,3 @@
-import json
 import re
 import urllib.parse
 import sys
@@ -18,34 +17,12 @@ LOG_PATTERN = re.compile(
     r'^(\S+)\s+\S+\s+\S+\s+\[([^\]]+)\]\s+"([^"]*)"\s+(\d{3})\s+(\d+|-)(?:\s+"([^"]*)"\s+"([^"]*)")?(?:\s+(\d+))?$'
 )
 
-def flatten_json_values(data) -> list:
-    """Recursively extract all key and string/numeric values from nested JSON structures."""
-    values = []
-    if isinstance(data, dict):
-        for k, v in data.items():
-            values.append(str(k))
-            values.extend(flatten_json_values(v))
-    elif isinstance(data, list):
-        for item in data:
-            values.extend(flatten_json_values(item))
-    elif data is not None:
-        values.append(str(data))
-    return values
-
-def calculate_json_depth(data) -> int:
-    """Calculate the maximum nesting depth of a JSON structure."""
-    if isinstance(data, dict):
-        return 1 + (max((calculate_json_depth(v) for v in data.values()), default=0) if data else 0)
-    elif isinstance(data, list):
-        return 1 + (max((calculate_json_depth(item) for item in data), default=0) if data else 0)
-    return 0
-
 def parse_request_string(request_str: str, body: str = "", content_type: str = ""):
     """
-    Parse request line and request body (GET query + POST form / JSON) into components.
+    Parse request line and request body (GET query + POST form) into components.
     """
     if not request_str or request_str == "-":
-        return "", "", "", "", "", "", "", "", "", 0, 0, 0
+        return "", "", "", "", "", "", "", "", "", 0
 
     parts = request_str.strip().split()
     if len(parts) == 1:
@@ -65,38 +42,19 @@ def parse_request_string(request_str: str, body: str = "", content_type: str = "
     decoded_path = urllib.parse.unquote_plus(path)
     decoded_query = urllib.parse.unquote_plus(query)
 
-    # Parse Request Body (JSON or Form-urlencoded)
+    # Parse Request Body (Form-urlencoded)
     decoded_body = ""
-    is_json = 0
-    json_depth = 0
     param_count_body = 0
 
     if body and str(body).strip():
         body_clean = str(body).strip()
-        is_json_type = "json" in content_type.lower() or body_clean.startswith(("{", "["))
-        if is_json_type:
-            try:
-                parsed_json = json.loads(body_clean)
-                is_json = 1
-                json_depth = calculate_json_depth(parsed_json)
-                flat_vals = flatten_json_values(parsed_json)
-                decoded_body = " ".join(flat_vals)
-                param_count_body = len(parsed_json) if isinstance(parsed_json, (dict, list)) else len(flat_vals)
-            except Exception:
-                decoded_body = urllib.parse.unquote_plus(body_clean)
-                is_json = 1
-                json_depth = 1
-                param_count_body = 1
-        else:
-            decoded_body = urllib.parse.unquote_plus(body_clean)
-            is_json = 0
-            json_depth = 0
-            param_count_body = len(urllib.parse.parse_qs(body_clean))
+        decoded_body = urllib.parse.unquote_plus(body_clean)
+        param_count_body = len(urllib.parse.parse_qs(body_clean))
 
     return (
         method, raw_url, path, query, protocol,
         decoded_url, decoded_query, body, decoded_body,
-        is_json, json_depth, param_count_body
+        param_count_body
     )
 
 def parse_raw_line(line: str, body: str = "", content_type: str = ""):
@@ -119,7 +77,7 @@ def parse_raw_line(line: str, body: str = "", content_type: str = ""):
     (
         method, url, path, query, protocol,
         decoded_url, decoded_query, raw_body, decoded_body,
-        is_json, json_depth, param_count_body
+        param_count_body
     ) = parse_request_string(request_str, body=body, content_type=content_type)
 
     return {
@@ -140,8 +98,6 @@ def parse_raw_line(line: str, body: str = "", content_type: str = ""):
         "body": raw_body,
         "decoded_body": decoded_body,
         "content_type": content_type,
-        "is_json_payload": is_json,
-        "json_depth": json_depth,
         "param_count_body": param_count_body
     }
 

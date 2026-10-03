@@ -20,27 +20,16 @@ from src.config import PAYLOADS_ALL_CSV, RAW_LOG_FILE, RAW_LOGS_DIR
 
 def convert_payload_to_http_request(payload: str, attack_type: str = "", rng: Optional[random.Random] = None) -> Tuple[str, str, str, str, str, str]:
     """
-    Convert payload string into HTTP request components:
+    Convert payload string into HTTP request components for DVWA:
     returns (method, url, path, query, body, content_type)
     """
     payload_str = str(payload).strip()
-    is_json = payload_str.startswith(("{", "[")) or "json" in attack_type.lower()
 
-    if is_json:
-        method = "POST"
-        content_type = "application/json"
-        api_paths = ["/api/v1/query", "/api/v1/search", "/api/v1/auth", "/api/v1/users", "/rest/items", "/api/v1/profile"]
-        path = rng.choice(api_paths) if rng else "/api/v1/query"
-        query = ""
-        body = payload_str
-        url = f"http://127.0.0.1{path}"
-        return method, url, path, query, body, content_type
-
-    # 25% of regular form payloads sent as POST form-urlencoded
+    # 25% of regular form payloads sent as POST form-urlencoded to DVWA
     if rng and rng.random() < 0.25 and ("=" in payload_str or "auth" in attack_type.lower()):
         method = "POST"
         content_type = "application/x-www-form-urlencoded"
-        form_paths = ["/login.php", "/vulnerabilities/sqli/", "/search.php", "/vulnerabilities/sqli_blind/"]
+        form_paths = ["/login.php", "/vulnerabilities/sqli/", "/vulnerabilities/sqli_blind/"]
         path = rng.choice(form_paths)
         query = ""
         body = payload_str

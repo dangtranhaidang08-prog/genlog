@@ -28,7 +28,7 @@ def predict_single(request_str: str, model, vec, cols, body: str = "", content_t
     (
         method, url, path, query, protocol,
         decoded_url, decoded_query, raw_body, decoded_body,
-        is_json, json_depth, param_count_body
+        param_count_body
     ) = parse_request_string(request_str, body=body, content_type=content_type)
     row_dict = {
         "ip": "127.0.0.1",
@@ -47,8 +47,6 @@ def predict_single(request_str: str, model, vec, cols, body: str = "", content_t
         "body": raw_body,
         "decoded_body": decoded_body,
         "content_type": content_type,
-        "is_json_payload": is_json,
-        "json_depth": json_depth,
         "param_count_body": param_count_body
     }
     feat_dict = extract_features_from_row(row_dict)
@@ -86,9 +84,9 @@ def run_adversarial_suite(model, vec, cols):
         ("GET /check?id=1' OR 2>1-- HTTP/1.1", "Inequality Tautology 2>1"),
         # Nested expression
         ("GET /query?id=1' OR (((1=1)))-- HTTP/1.1", "Deeply Nested Parentheses Tautology"),
-        # POST JSON Evasion
-        ("POST /api/v1/auth HTTP/1.1", "JSON Body SQLi Auth Evasion", '{"username": "admin\' OR 1=1-- -", "password": "123"}', "application/json"),
-        ("POST /api/v1/query HTTP/1.1", "Nested JSON Body UNION SELECT Evasion", '{"query": {"filter": "laptop\' UNION SELECT user,password FROM users--"}}', "application/json")
+        # POST Form Evasion
+        ("POST /login.php HTTP/1.1", "Form Body SQLi Auth Evasion", "username=admin' OR 1=1-- -&password=123", "application/x-www-form-urlencoded"),
+        ("POST /vulnerabilities/sqli/ HTTP/1.1", "Form Body UNION SELECT Evasion", "id=1' UNION SELECT user,password FROM users--&Submit=Submit", "application/x-www-form-urlencoded")
     ]
 
     evasion_results = []
@@ -135,11 +133,11 @@ def run_false_positive_suite(model, vec, cols):
         ("GET /math?calc=10+plus+20+equals+30 HTTP/1.1", "Benign math query"),
         # Standard web requests
         ("GET /index.php?page=home&lang=vi HTTP/1.1", "Standard homepage with page and lang"),
-        ("GET /api/v1/items?limit=20&offset=40 HTTP/1.1", "REST API pagination"),
-        ("GET /catalog?category=electronics&sort=newest HTTP/1.1", "Catalog category sort"),
-        # POST JSON Benign Corner Cases
-        ("POST /api/v1/search HTTP/1.1", "JSON Benign Search with pagination", '{"search": "laptop", "page": 1, "category": "electronics"}', "application/json"),
-        ("POST /api/v1/feedback HTTP/1.1", "JSON Benign Feedback with quote", '{"author": "O\'Connor", "comment": "Great product select menu!"}', "application/json")
+        ("GET /vulnerabilities/sqli/?id=1&Submit=Submit HTTP/1.1", "Standard DVWA search query"),
+        ("GET /catalog.php?category=electronics&sort=newest HTTP/1.1", "Catalog category sort"),
+        # POST Form Benign Corner Cases
+        ("POST /login.php HTTP/1.1", "Form Benign Login", "username=john_doe&password=password123&Login=Login", "application/x-www-form-urlencoded"),
+        ("POST /vulnerabilities/sqli/ HTTP/1.1", "Form Benign Feedback with quote", "id=1&feedback=O'Connor's+Guide&Submit=Submit", "application/x-www-form-urlencoded")
     ]
 
     fp_results = []
@@ -195,7 +193,7 @@ def run_latency_benchmark(model, vec, cols, iterations: int = 50):
     (
         method, url, path, query, protocol,
         decoded_url, decoded_query, raw_body, decoded_body,
-        is_json, json_depth, param_count_body
+        param_count_body
     ) = parse_request_string(sample_req)
     row_dict = {
         "ip": "127.0.0.1", "timestamp": "01/Jan/2026:00:00:00 +0000",
@@ -203,7 +201,7 @@ def run_latency_benchmark(model, vec, cols, iterations: int = 50):
         "status": 200, "size": 1000, "referer": "-", "user_agent": "Benchmark/1.0",
         "decoded_url": decoded_url, "decoded_query": decoded_query,
         "body": raw_body, "decoded_body": decoded_body, "content_type": "",
-        "is_json_payload": is_json, "json_depth": json_depth, "param_count_body": param_count_body
+        "param_count_body": param_count_body
     }
 
     feat_dict = extract_features_from_row(row_dict)

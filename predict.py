@@ -99,7 +99,7 @@ def predict_request(
     (
         method, url, path, query, protocol,
         decoded_url, decoded_query, raw_body, decoded_body,
-        is_json, json_depth, param_count_body
+        param_count_body
     ) = parse_request_string(req_line, body=body_in, content_type=content_type_in)
 
     if method_in:
@@ -122,8 +122,6 @@ def predict_request(
         "body": raw_body,
         "decoded_body": decoded_body,
         "content_type": content_type_in,
-        "is_json_payload": is_json,
-        "json_depth": json_depth,
         "param_count_body": param_count_body
     }
 
@@ -157,7 +155,6 @@ def predict_request(
     if raw_body:
         print(f"Body:         {raw_body[:120]}{'...' if len(raw_body) > 120 else ''}")
         print(f"Content-Type: {content_type_in if content_type_in else 'unspecified'}")
-        print(f"Is JSON:      {bool(is_json)} (Depth: {json_depth})")
     print(f"Prediction:   {label_str}")
     print(f"Label:        {pred}")
     print("\nProbability:")
@@ -175,9 +172,9 @@ def main():
     parser = argparse.ArgumentParser(description="Real-time CLI Predictor for Web Attack Detection (SQLi)")
     parser.add_argument("request", nargs="?", default="", help="HTTP Request string, e.g. 'GET /vulnerabilities/sqli/?id=1 HTTP/1.1'")
     parser.add_argument("--method", type=str, default="", help="HTTP Method (GET, POST, etc.)")
-    parser.add_argument("--url", type=str, default="", help="Target URL or Path (e.g. /api/v1/auth)")
-    parser.add_argument("--body", type=str, default="", help="Request Body content (JSON or form-urlencoded)")
-    parser.add_argument("--content-type", type=str, default="", help="Content-Type header (e.g. application/json)")
+    parser.add_argument("--url", type=str, default="", help="Target URL or Path (e.g. /vulnerabilities/sqli/ or /login.php)")
+    parser.add_argument("--body", type=str, default="", help="Request Body content (form-urlencoded)")
+    parser.add_argument("--content-type", type=str, default="", help="Content-Type header (e.g. application/x-www-form-urlencoded)")
 
     args = parser.parse_args()
 
@@ -193,7 +190,7 @@ def main():
             feature_cols=feature_cols
         )
     else:
-        print("No input provided. Running comprehensive test suite (GET + POST JSON)...\n")
+        print("No input provided. Running comprehensive DVWA test suite (GET + POST Form)...\n")
         test_samples = [
             # 1. NORMAL GET
             {"request": "GET /index.php HTTP/1.1"},
@@ -205,38 +202,38 @@ def main():
             {"request": "GET /vulnerabilities/sqli_blind/?id=1%27+AND+IF%281%3D1%2CSLEEP%285%29%2C0%29--+- HTTP/1.1"},
             {"request": "GET /vulnerabilities/sqli_blind/?id=1%27+AND+CASE+WHEN+%281%3D1%29+THEN+1/0+ELSE+1+END--+- HTTP/1.1"},
 
-            # 3. NORMAL POST JSON
+            # 3. NORMAL POST FORM
             {
                 "method": "POST",
-                "url": "/api/v1/search",
-                "body": '{"search": "laptop", "page": 1, "category": "electronics"}',
-                "content_type": "application/json"
+                "url": "/login.php",
+                "body": "username=admin&password=password&Login=Login",
+                "content_type": "application/x-www-form-urlencoded"
             },
             {
                 "method": "POST",
-                "url": "/api/v1/auth",
-                "body": '{"username": "alice", "action": "login", "remember": true}',
-                "content_type": "application/json"
+                "url": "/vulnerabilities/sqli/",
+                "body": "id=1&Submit=Submit",
+                "content_type": "application/x-www-form-urlencoded"
             },
 
-            # 4. SQLi POST JSON
+            # 4. SQLi POST FORM
             {
                 "method": "POST",
-                "url": "/api/v1/auth",
-                "body": '{"username": "admin\' OR 1=1-- -", "password": "123"}',
-                "content_type": "application/json"
+                "url": "/login.php",
+                "body": "username=admin' OR 1=1--&password=123&Login=Login",
+                "content_type": "application/x-www-form-urlencoded"
             },
             {
                 "method": "POST",
-                "url": "/api/v1/query",
-                "body": '{"query": "laptop\' UNION SELECT user,password FROM users--", "limit": 10}',
-                "content_type": "application/json"
+                "url": "/vulnerabilities/sqli/",
+                "body": "id=1' UNION SELECT user,password FROM users--&Submit=Submit",
+                "content_type": "application/x-www-form-urlencoded"
             },
             {
                 "method": "POST",
-                "url": "/api/v1/filter",
-                "body": '{"filter": {"user_id": "1\' AND SLEEP(5)--", "status": "active"}}',
-                "content_type": "application/json"
+                "url": "/vulnerabilities/sqli_blind/",
+                "body": "id=1' AND SLEEP(5)--&Submit=Submit",
+                "content_type": "application/x-www-form-urlencoded"
             }
         ]
 

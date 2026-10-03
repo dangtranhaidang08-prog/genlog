@@ -38,7 +38,6 @@ document.addEventListener("DOMContentLoaded", () => {
         "Boolean": 0,
         "Time-based": 0,
         "Error-based": 0,
-        "JSON": 0,
         "Normal": 0
     };
 
@@ -56,7 +55,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         "#7c3aed", // Boolean - Violet
                         "#dc2626", // Time-based - Red
                         "#d97706", // Error-based - Amber
-                        "#db2777", // JSON - Pink
                         "#2563eb"  // Normal - Blue
                     ],
                     borderRadius: 6,
@@ -178,8 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function updateCharts(event, isSQLi) {
         const atkType = String(event.attack_type || "").toLowerCase();
-        if (atkType.includes("json")) categoryCounts["JSON"]++;
-        else if (atkType.includes("union")) categoryCounts["UNION"]++;
+        if (atkType.includes("union")) categoryCounts["UNION"]++;
         else if (atkType.includes("boolean")) categoryCounts["Boolean"]++;
         else if (atkType.includes("time")) categoryCounts["Time-based"]++;
         else if (atkType.includes("error")) categoryCounts["Error-based"]++;

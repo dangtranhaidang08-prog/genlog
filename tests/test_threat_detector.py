@@ -48,36 +48,34 @@ class TestThreatDetector(unittest.TestCase):
         self.assertTrue(any("quote" in ind.lower() or "or" in ind.lower() or "comment" in ind.lower() for ind in inspection["indicators"]))
         print(f"[TEST 2 PASS] SQLi GET detected -> Score: {inspection['confidence']:.4f}, Indicators: {len(inspection['indicators'])}")
 
-    def test_03_benign_post_json_allowed(self):
-        """Test that safe REST API POST with JSON payload is classified as SAFE."""
-        json_body = '{"search": "wireless headphones", "page": 1, "category": "electronics"}'
+    def test_03_benign_post_form_allowed(self):
+        """Test that safe DVWA POST form request is classified as SAFE."""
+        form_body = "username=john_doe&password=password123&Login=Login"
         inspection = self.detector.inspect_request(
             method="POST",
-            path="/api/v1/search",
-            body=json_body,
-            content_type="application/json",
+            path="/login.php",
+            body=form_body,
+            content_type="application/x-www-form-urlencoded",
             client_ip="192.168.1.75"
         )
         self.assertFalse(inspection["is_attack"])
-        self.assertTrue(inspection["is_json"])
         self.assertLess(inspection["confidence"], 0.50)
-        print(f"[TEST 3 PASS] Safe POST JSON classified safe -> Score: {inspection['confidence']:.4f}")
+        print(f"[TEST 3 PASS] Safe POST form classified safe -> Score: {inspection['confidence']:.4f}")
 
-    def test_04_sqli_post_json_detected(self):
-        """Test that SQLi payload hidden inside a POST JSON body is detected."""
-        malicious_json = '{"username": "admin\' OR 1=1-- -", "password": "anypassword"}'
+    def test_04_sqli_post_form_detected(self):
+        """Test that SQLi payload inside a DVWA POST form body is detected."""
+        malicious_form = "username=admin' OR 1=1-- -&password=anypassword&Login=Login"
         inspection = self.detector.inspect_request(
             method="POST",
-            path="/api/v1/auth",
-            body=malicious_json,
-            content_type="application/json",
+            path="/login.php",
+            body=malicious_form,
+            content_type="application/x-www-form-urlencoded",
             client_ip="10.0.0.88"
         )
         self.assertTrue(inspection["is_attack"])
-        self.assertTrue(inspection["is_json"])
         self.assertGreaterEqual(inspection["confidence"], 0.50)
         self.assertTrue("SQL" in inspection["attack_type"].upper())
-        print(f"[TEST 4 PASS] Malicious POST JSON detected -> Score: {inspection['confidence']:.4f}")
+        print(f"[TEST 4 PASS] Malicious POST form detected -> Score: {inspection['confidence']:.4f}")
 
     def test_05_threshold_adjustment(self):
         """Test dynamic adjustment of risk alert threshold."""

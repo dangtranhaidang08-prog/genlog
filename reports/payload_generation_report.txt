@@ -1,48 +1,47 @@
 ====================================
 PAYLOAD GENERATION REPORT
 ====================================
-Total Generated:     46973
-Total Unique:        13166
-Duplicates Removed: 33807
+Total Generated:     4574
+Total Unique:        2900
+Duplicates Removed: 1674
 
-Normal Count:        4204 (31.93%)
-SQLi Count:          8962 (68.07%)
+Normal Count:        800 (27.59%)
+SQLi Count:          2100 (72.41%)
 
 Dataset Splits (Family/Template Grouped Split - Zero Leakage):
-  - Train:           9889 samples (104 templates)
-  - Validation:      1865 samples (22 templates)
-  - Test (Unseen):   1412 samples (23 templates)
+  - Train:           1797 samples (91 templates)
+  - Validation:      424 samples (19 templates)
+  - Test (Unseen):   679 samples (21 templates)
 
 SQLi Attack Type Distribution:
-  - sqli_boolean: 409
-  - sqli_blind_boolean: 409
-  - sqli_union: 409
-  - sqli_error: 409
-  - sqli_blind_error: 409
-  - sqli_blind_time: 409
-  - sqli_syntax_probe: 409
-  - sqli_auth: 409
-  - sqli_numeric: 409
-  - sqli_string: 409
-  - sqli_nested: 409
-  - sqli_subquery: 409
-  - sqli_enum: 409
-  - sqli_info_schema: 409
-  - sqli_obfuscated: 409
-  - sqli_comment_var: 409
-  - sqli_whitespace_var: 409
-  - sqli_case_var: 409
-  - sqli_param_var: 409
-  - sqli_mixed: 409
-  - sqli_json: 409
-  - sqli_encoded: 373
+  - sqli_boolean: 100
+  - sqli_blind_boolean: 100
+  - sqli_union: 100
+  - sqli_error: 100
+  - sqli_blind_error: 100
+  - sqli_blind_time: 100
+  - sqli_syntax_probe: 100
+  - sqli_auth: 100
+  - sqli_numeric: 100
+  - sqli_string: 100
+  - sqli_nested: 100
+  - sqli_subquery: 100
+  - sqli_enum: 100
+  - sqli_info_schema: 100
+  - sqli_encoded: 100
+  - sqli_obfuscated: 100
+  - sqli_comment_var: 100
+  - sqli_whitespace_var: 100
+  - sqli_case_var: 100
+  - sqli_param_var: 100
+  - sqli_mixed: 100
 
-Unique Templates:    149
-Unique Payload Hashes: 13166
+Unique Templates:    131
+Unique Payload Hashes: 2900
 
 Payload Length Statistics:
   - Min Length:    5
-  - Max Length:    604
-  - Mean Length:   59.09
-  - Median Length: 52.00
+  - Max Length:    475
+  - Mean Length:   55.13
+  - Median Length: 42.00
 ====================================

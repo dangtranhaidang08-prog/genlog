@@ -33,9 +33,7 @@ def extract_features_from_row(row: dict, ip_stats: Optional[dict] = None) -> dic
     decoded_body = str(row.get("decoded_body", ""))
     content_type = str(row.get("content_type", "")).lower()
 
-    # JSON & Body Meta
-    is_json = int(row.get("is_json_payload", 1 if ("json" in content_type or raw_body.strip().startswith(("{", "["))) else 0))
-    json_depth = int(row.get("json_depth", 0))
+    # Body Meta
     param_count_body = int(row.get("param_count_body", 0))
 
     method = str(row.get("method", "GET")).upper()
@@ -51,8 +49,6 @@ def extract_features_from_row(row: dict, ip_stats: Optional[dict] = None) -> dic
     feats["path_length"] = len(path)
     feats["query_length"] = len(query)
     feats["body_length"] = len(raw_body)
-    feats["is_json_payload"] = is_json
-    feats["json_depth"] = json_depth
     feats["param_count_body"] = param_count_body
 
     params = urllib.parse.parse_qs(query)

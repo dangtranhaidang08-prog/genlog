@@ -1,40 +1,39 @@
 ====================================
 DATASET REPORT
 ====================================
-Raw samples: 13115
+Raw samples: 2889
 Failed parse: 0
-Clean samples: 13115
-Duplicate requests: 2797
+Clean samples: 2889
+Duplicate requests: 442
 Unknown/unlabeled: 0
 
-Normal: 4204 (32.05%)
-SQLi: 8911 (67.95%)
+Normal: 800 (27.69%)
+SQLi: 2089 (72.31%)
 
 Attack types:
-  - sqli_boolean: 409
-  - sqli_blind_boolean: 409
-  - sqli_union: 409
-  - sqli_error: 409
-  - sqli_blind_error: 409
-  - sqli_blind_time: 409
-  - sqli_numeric: 409
-  - sqli_string: 409
-  - sqli_nested: 409
-  - sqli_subquery: 409
-  - sqli_enum: 409
-  - sqli_info_schema: 409
-  - sqli_obfuscated: 409
-  - sqli_comment_var: 409
-  - sqli_whitespace_var: 409
-  - sqli_case_var: 409
-  - sqli_param_var: 409
-  - sqli_mixed: 409
-  - sqli_json: 409
-  - sqli_auth: 387
-  - sqli_syntax_probe: 380
-  - sqli_encoded: 373
+  - sqli_boolean: 100
+  - sqli_blind_boolean: 100
+  - sqli_union: 100
+  - sqli_error: 100
+  - sqli_blind_error: 100
+  - sqli_blind_time: 100
+  - sqli_numeric: 100
+  - sqli_string: 100
+  - sqli_nested: 100
+  - sqli_subquery: 100
+  - sqli_enum: 100
+  - sqli_info_schema: 100
+  - sqli_encoded: 100
+  - sqli_obfuscated: 100
+  - sqli_comment_var: 100
+  - sqli_whitespace_var: 100
+  - sqli_case_var: 100
+  - sqli_param_var: 100
+  - sqli_mixed: 100
+  - sqli_syntax_probe: 95
+  - sqli_auth: 94
 
 Unique IP: 1
-Unique path: 10
-Unique query: 6928
+Unique path: 3
+Unique query: 2202
 ====================================

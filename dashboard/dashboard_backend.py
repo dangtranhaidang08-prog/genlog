@@ -93,8 +93,7 @@ def start_log_tailer():
                                 "action": "CRITICAL THREAT" if insp["is_attack"] else "SAFE (NORMAL)",
                                 "attack_type": insp["attack_type"],
                                 "latency_ms": insp["latency_ms"],
-                                "indicators": insp["indicators"],
-                                "is_json": insp["is_json"]
+                                "indicators": insp["indicators"]
                             }
                             enqueue_security_event(evt)
         except Exception:
@@ -150,8 +149,7 @@ def start_log_tailer():
                                 "action": "CRITICAL THREAT" if insp["is_attack"] else "SAFE (NORMAL)",
                                 "attack_type": insp["attack_type"],
                                 "latency_ms": insp["latency_ms"],
-                                "indicators": insp["indicators"],
-                                "is_json": insp["is_json"]
+                                "indicators": insp["indicators"]
                             }
                             enqueue_security_event(evt)
 
@@ -304,8 +302,7 @@ class DashboardRequestHandler(http.server.SimpleHTTPRequestHandler):
                 "confidence": insp["confidence"],
                 "attack_type": insp["attack_type"],
                 "latency_ms": insp["latency_ms"],
-                "indicators": insp["indicators"],
-                "is_json": insp["is_json"]
+                "indicators": insp["indicators"]
             }
 
             resp_body = json.dumps(result).encode("utf-8")
