@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Caches
+.pytest_cache/
+.ruff_cache/
+
+# Environments
+.venv/
+env/
+venv/
+ENV/
+
+# OS and Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Environment Variables & Secrets
+.env
+.env.local
+*.env
+!.env.example
+
+# Logs & Temporary files
+*.log
+scratch/
+data/raw/access.log
+data/raw_logs/
+
+# Local deployment submodules / external clones
+deploy/

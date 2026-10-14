@@ -1,0 +1,26 @@
+====================================
+DATASET REPORT
+====================================
+Raw samples: 15755
+Failed parse: 0
+Clean samples: 14088
+Duplicate requests: 3948
+Unknown/unlabeled: 1667
+
+Normal: 7908 (56.13%)
+SQLi: 6180 (43.87%)
+
+Attack types:
+  - sqli: 4982
+  - sqli_evasion: 544
+  - sqli_dvwa_specific: 342
+  - sqli_boolean: 123
+  - sqli_auth_bypass: 78
+  - sqli_subquery: 46
+  - sqli_probe: 41
+  - sqli_blind_time: 24
+
+Unique IP: 2
+Unique path: 4
+Unique query: 9637
+====================================

@@ -1,0 +1,24 @@
+{
+  "model_version": "1.1.0",
+  "algorithm": "Random Forest Classifier",
+  "selected_threshold": 0.25,
+  "default_threshold": 0.25,
+  "features": {
+    "numerical_feature_count": 64,
+    "tfidf_feature_count": 300,
+    "total_feature_dim": 364
+  },
+  "dataset_split_strategy": "GroupShuffleSplit on template-based payload family and canonical request hash",
+  "train_samples": 9901,
+  "validation_samples": 2120,
+  "test_samples": 2067,
+  "metrics": {
+    "accuracy": 0.9685534591194969,
+    "sqli_recall": 0.9798728813559322,
+    "sqli_precision": 0.952626158599382,
+    "sqli_f1": 0.9660574412532638,
+    "roc_auc": 0.9979313506497427,
+    "pr_auc": 0.9976039846749908,
+    "fpr": 0.04096170970614425
+  }
+}

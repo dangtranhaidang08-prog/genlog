@@ -1,0 +1,17 @@
+{
+  "include": [
+    ".",
+    "src",
+    "config",
+    "dashboard",
+    "scripts",
+    "tests"
+  ],
+  "extraPaths": [
+    ".",
+    "src",
+    "dashboard",
+    "dashboard/backend"
+  ],
+  "pythonVersion": "3.13"
+}

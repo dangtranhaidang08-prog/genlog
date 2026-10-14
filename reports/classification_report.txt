@@ -1,0 +1,24 @@
+SQL INJECTION DETECTION — EVALUATION REPORT
+==================================================
+
+Total samples: 14088 (Train: 9901, Val: 2120, Test: 2067)
+Cross-validation F1 (5-Fold Grouped): 0.9583 ± 0.0134
+Selected Threshold: 0.25
+
+Test Set Classification Details:
+              precision    recall  f1-score   support
+
+  Normal (0)     0.9827    0.9590    0.9707      1123
+    SQLi (1)     0.9526    0.9799    0.9661       944
+
+    accuracy                         0.9686      2067
+   macro avg     0.9676    0.9695    0.9684      2067
+weighted avg     0.9689    0.9686    0.9686      2067
+
+
+Unseen Payloads Benchmark:
+Samples: 2250
+Accuracy: 89.29%
+Recall: 82.32%
+Precision: 98.09%
+F1-Score: 89.52%
